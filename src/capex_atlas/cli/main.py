@@ -17,6 +17,7 @@ from capex_atlas import __version__
 from capex_atlas.accounting.reconciliation import CheckStatus, reconcile
 from capex_atlas.adapters.alphabet import AlphabetAdapter
 from capex_atlas.bundle import (
+    FactScope,
     audit_bundle,
     build_analysis,
     content_only,
@@ -123,6 +124,14 @@ def analyze(
     period: PeriodOpt = "2025FY",
     output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
     data_dir: Annotated[Path, typer.Option("--data-dir")] = DEFAULT_DATA,
+    facts: Annotated[
+        FactScope,
+        typer.Option(
+            "--facts",
+            help="How much history to carry: used, period, or all. History is most of a "
+            "bundle's bytes, so 'used' suits an artifact meant to travel.",
+        ),
+    ] = FactScope.ALL,
 ) -> None:
     """Build an analysis bundle and optionally write it out."""
     payload, source = _load_facts(ticker, data_dir)
@@ -131,7 +140,8 @@ def analyze(
         entity_id=ticker,
         period_label=period,
         source=source,
-        command=f"analyze {ticker} --through {period}",
+        facts_scope=facts,
+        command=f"analyze {ticker} --through {period} --facts {facts.value}",
     )
     for label, formatted, status in headline_table(bundle):
         typer.echo(f"  {label:<46} {formatted:>24}  {status}")

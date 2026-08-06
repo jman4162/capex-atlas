@@ -39,6 +39,15 @@ jobs:
       - name: Tests
         run: uv run pytest --cov --cov-report=term-missing
 
+      - name: Example bundle rebuilds and audits
+        # The committed example is the thing readers trust most, so it is checked
+        # rather than assumed. Rebuild from the pinned fixture, then audit.
+        run: |
+          uv run python scripts/build_example.py
+          git diff --exit-code -- examples/ \
+            || (echo "examples/ is stale; run scripts/build_example.py" && exit 1)
+          uv run capex-atlas audit examples/googl-2025fy
+
   prose:
     # Two linters with near-disjoint rule sets: slopscore covers Markdown and
     # Python docstrings, slopless covers structural patterns in Markdown.

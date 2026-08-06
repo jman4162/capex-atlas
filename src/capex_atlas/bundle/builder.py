@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from capex_atlas import __version__
@@ -36,6 +37,7 @@ from capex_atlas.metrics import (
     standardized_fcf,
 )
 from capex_atlas.provenance.graph import calculation_graph
+from capex_atlas.scenarios.model import ScenarioResult
 from capex_atlas.schemas.facts import FinancialFact
 from capex_atlas.schemas.period import PeriodKind
 from capex_atlas.schemas.source import SourceReference
@@ -62,6 +64,45 @@ class UnsupportedEntityError(KeyError):
     pass
 
 
+class FactScope(StrEnum):
+    """How much of a filer's history a bundle carries.
+
+    The trade-off is real. History lets a chart be drawn without re-extracting,
+    and it is most of a bundle's bytes. ``used`` keeps only what the published
+    figures rest on, which is the right choice for an artifact meant to travel.
+    """
+
+    USED = "used"
+    """Only the facts the published values were computed from."""
+
+    PERIOD = "period"
+    """The analyzed period and its balance-sheet date."""
+
+    ALL = "all"
+    """Everything extracted, so charts have a history to draw."""
+
+
+def _select_facts(
+    facts: Sequence[FinancialFact],
+    values: Sequence[AnalyticalValue],
+    *,
+    scope: FactScope,
+    period_label: str,
+    balance_label: str | None,
+) -> tuple[FinancialFact, ...]:
+    if scope is FactScope.ALL:
+        keep = list(facts)
+    elif scope is FactScope.PERIOD:
+        wanted = {period_label, balance_label}
+        keep = [fact for fact in facts if fact.period.label in wanted]
+    else:
+        # Each fact now carries its own citation, so the source ids a value
+        # names identify exactly the facts it used.
+        cited = {source_id for value in values for source_id in value.source_ids}
+        keep = [fact for fact in facts if fact.source.source_id in cited]
+    return tuple(sorted(keep, key=lambda f: (f.metric_id, f.period.label)))
+
+
 def build_analysis(
     payload: dict[str, Any],
     *,
@@ -71,6 +112,8 @@ def build_analysis(
     registry: AssumptionRegistry | None = None,
     template: str = "capital-deployment",
     command: str | None = None,
+    facts_scope: FactScope = FactScope.ALL,
+    scenarios: Sequence[ScenarioResult] = (),
 ) -> AnalysisBundle:
     """Turn a Company Facts payload into a frozen analysis for one period."""
     adapter = ADAPTERS.get(entity_id)
@@ -113,8 +156,16 @@ def build_analysis(
             tax_rate=tax_rate,
         )
 
-    used_facts = tuple(sorted(extraction.facts, key=lambda f: (f.metric_id, f.period.label)))
+    # Reconcile over everything extracted, then keep only what the caller asked
+    # to carry. Narrowing before the checks would weaken them silently.
     report = reconcile(extraction.facts, cumulative_concepts=[CAPEX, CFO])
+    used_facts = _select_facts(
+        extraction.facts,
+        results,
+        scope=facts_scope,
+        period_label=period_label,
+        balance_label=balance_label,
+    )
 
     return AnalysisBundle(
         entity_id=entity_id,
@@ -122,10 +173,21 @@ def build_analysis(
         template=template,
         facts=used_facts,
         values=tuple(results),
-        calculations=tuple(sorted(graph.nodes, key=lambda n: n.node_id)),
+        scenarios=tuple(scenarios),
+        calculations=tuple(
+            sorted(
+                {
+                    node.node_id: node
+                    for node in (*graph.nodes, *(n for s in scenarios for n in s.calculations))
+                }.values(),
+                key=lambda n: n.node_id,
+            )
+        ),
         assumptions=(tax_rate,),
         validation=report,
         notes={
+            "facts_scope": facts_scope.value,
+            "facts_extracted": len(extraction.facts),
             "restatements": len(extraction.restatements),
             "skipped_entries": len(extraction.skipped),
             "segment_support": adapter.segment_support("sec_companyfacts").explanation,

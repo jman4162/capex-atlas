@@ -16,6 +16,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
 
 from capex_atlas.capital_vintages.model import AssetClassParameters, VintageSchedule
+from capex_atlas.schemas.calculation import CalculationNode
 from capex_atlas.schemas.evidence import EvidenceStatus
 from capex_atlas.schemas.values import AnalyticalValue
 
@@ -73,6 +74,9 @@ class ScenarioResult(BaseModel):
     irr: AnalyticalValue
     payback: AnalyticalValue
     schedule: VintageSchedule
+    calculations: tuple[CalculationNode, ...] = ()
+    """Nodes from this run, so the audit can trace the scenario's own figures."""
+
     requirements: tuple[RequirementSummary, ...] = ()
     sensitivities: tuple[SensitivitySummary, ...] = Field(default_factory=tuple)
 

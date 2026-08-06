@@ -3,8 +3,9 @@
 Turn public filings into reproducible, source-linked models of hyperscaler capital deployment,
 cash flow, capacity economics, and returns on invested capital.
 
-> **Status: pre-release (v0.1 in progress).** The engine, the CLI and the reference app are working
-> end to end for Alphabet. Documentation, a published example bundle and a hosted demo are not done.
+> **Status: v0.1.0.** The engine, the CLI and the reference lab work end to end for Alphabet, with a
+> worked example in [`examples/`](examples/googl-2025fy) that CI rebuilds and audits. Not on PyPI;
+> Microsoft, Meta and Oracle adapters are not written. See [CHANGELOG.md](CHANGELOG.md).
 
 > **Not advice.** Capex Atlas is educational software. It is **not investment, legal, tax or
 > accounting advice**, carries **no warranty of accuracy or completeness**, and its authors accept
@@ -76,13 +77,19 @@ uv run pytest
 ./scripts/slopcheck.sh score    # slopscore only, no Node needed
 ```
 
-Build an analysis and browse it:
+Browse the committed example without touching the network:
+
+```bash
+uv run capex-atlas audit examples/googl-2025fy    # every value must trace to evidence
+uv run streamlit run apps/streamlit/app.py -- --bundle examples/googl-2025fy
+```
+
+Build a fresh one from SEC:
 
 ```bash
 export CAPEX_ATLAS_SEC_USER_AGENT="you (you@example.com)"   # SEC asks who is calling
-uv run capex-atlas analyze GOOGL --through 2025FY -o examples/googl-2025fy
-uv run capex-atlas audit examples/googl-2025fy    # every value must trace to evidence
-uv run streamlit run apps/streamlit/app.py -- --bundle examples/googl-2025fy
+uv run capex-atlas analyze GOOGL --through 2025FY --facts used -o build/googl-2025fy
+uv run capex-atlas verify build/googl-2025fy      # rebuild and confirm it reproduces
 ```
 
 `lint-imports` enforces the layering that would otherwise require splitting the project into

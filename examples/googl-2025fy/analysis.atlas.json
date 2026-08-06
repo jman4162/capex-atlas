@@ -1,0 +1,1726 @@
+{
+  "assumptions": [
+    {
+      "assumption_id": "tax.us_federal_statutory_rate",
+      "basis": "published_third_party",
+      "citation": {
+        "accession": null,
+        "content_sha256": null,
+        "form": null,
+        "kind": "statute",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": "The amount of the tax imposed by subsection (a) shall be 21 percent of taxable income.",
+        "retrieved_at": null,
+        "section": "26 U.S.C. Sec. 11(b)",
+        "source_id": "src:36bdaf0ea86a7277",
+        "url": "https://www.law.cornell.edu/uscode/text/26/11"
+      },
+      "description": "US federal statutory corporate income tax rate, used where an effective rate is not being modelled explicitly.",
+      "entity_id": null,
+      "unit": "ratio",
+      "value": "0.21"
+    }
+  ],
+  "calculations": [
+    {
+      "assumption_ids": [],
+      "formula": "purchases of property and equipment - depreciation",
+      "inputs": [
+        "val:92c682727d8b5857",
+        "val:8d4177103dd83c62"
+      ],
+      "metric_id": "capital.net_investment",
+      "metric_version": "1.0.0",
+      "node_id": "calc:1e8f864677c3cce4",
+      "period_label": "2025FY",
+      "result": "70311000000",
+      "source_ids": [
+        "src:232739bcd6565962",
+        "src:76cab0a25acd1017"
+      ],
+      "status": "derived",
+      "unit": "USD"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "rate where sum(free cash flow_t / (1 + rate)^t) = 0",
+      "inputs": [],
+      "metric_id": "vintage.irr",
+      "metric_version": "1.0.0",
+      "node_id": "calc:1f069cfaaba8c402",
+      "period_label": null,
+      "result": "0.1409576798391117335995659232139588",
+      "source_ids": [],
+      "status": "derived",
+      "unit": "ratio"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "NOPAT / invested capital",
+      "inputs": [
+        "calc:ef6ebc84a3bd57b5",
+        "calc:6cf5d72b75ed0536"
+      ],
+      "metric_id": "returns.roic",
+      "metric_version": "1.0.0",
+      "node_id": "calc:2593047f3f99dd64",
+      "period_label": "2025FY",
+      "result": "0.2787606270833732119564771543343734",
+      "source_ids": [
+        "src:abd34e06313bd5c0",
+        "src:1fba2aafb23e7997",
+        "src:a7fce86d06bb7394",
+        "src:644d406f01a3f3fd",
+        "src:3c902255268d07a5"
+      ],
+      "status": "estimated",
+      "unit": "ratio"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "years until cumulative free cash flow turns positive",
+      "inputs": [],
+      "metric_id": "vintage.payback",
+      "metric_version": "1.0.0",
+      "node_id": "calc:58f94e4df577b636",
+      "period_label": null,
+      "result": "3.444071936588519840034483584377020",
+      "source_ids": [],
+      "status": "derived",
+      "unit": "years"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "total assets - current liabilities",
+      "inputs": [
+        "val:2508945f84f04b82",
+        "val:d6de18516392054e"
+      ],
+      "metric_id": "returns.invested_capital_operating",
+      "metric_version": "1.0.0",
+      "node_id": "calc:63d6da11626ba701",
+      "period_label": "2025@4",
+      "result": "492536000000",
+      "source_ids": [
+        "src:1fba2aafb23e7997",
+        "src:a7fce86d06bb7394"
+      ],
+      "status": "derived",
+      "unit": "USD"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "total assets - current liabilities - cash and equivalents - marketable securities",
+      "inputs": [
+        "val:2508945f84f04b82",
+        "val:d6de18516392054e",
+        "val:f60a1cb741a1555b",
+        "val:4b6ac6aa4c4a84f4"
+      ],
+      "metric_id": "returns.invested_capital_ex_cash",
+      "metric_version": "1.0.0",
+      "node_id": "calc:6cf5d72b75ed0536",
+      "period_label": "2025@4",
+      "result": "365693000000",
+      "source_ids": [
+        "src:1fba2aafb23e7997",
+        "src:a7fce86d06bb7394",
+        "src:644d406f01a3f3fd",
+        "src:3c902255268d07a5"
+      ],
+      "status": "derived",
+      "unit": "USD"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "cash from operations - purchases of property and equipment",
+      "inputs": [
+        "val:e0bc589b5ea387b6",
+        "val:92c682727d8b5857"
+      ],
+      "metric_id": "fcf.reported",
+      "metric_version": "1.0.0",
+      "node_id": "calc:a0cbf733679405fb",
+      "period_label": "2025FY",
+      "result": "73266000000",
+      "source_ids": [
+        "src:39fdf68d1192faa3",
+        "src:232739bcd6565962"
+      ],
+      "status": "derived",
+      "unit": "USD"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "purchases of property and equipment / revenue",
+      "inputs": [
+        "val:92c682727d8b5857",
+        "val:20164955c1cc6dfb"
+      ],
+      "metric_id": "capex.intensity",
+      "metric_version": "1.0.0",
+      "node_id": "calc:abf7ef5c7ec2c14c",
+      "period_label": "2025FY",
+      "result": "0.2270080131865076606857381167522267",
+      "source_ids": [
+        "src:232739bcd6565962",
+        "src:e3f1408e99e3db64"
+      ],
+      "status": "derived",
+      "unit": "ratio"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "purchases of property and equipment / depreciation",
+      "inputs": [
+        "val:92c682727d8b5857",
+        "val:8d4177103dd83c62"
+      ],
+      "metric_id": "capex.to_depreciation",
+      "metric_version": "1.0.0",
+      "node_id": "calc:c0355abbdd37d413",
+      "period_label": "2025FY",
+      "result": "4.326599167297501892505677517032551",
+      "source_ids": [
+        "src:232739bcd6565962",
+        "src:76cab0a25acd1017"
+      ],
+      "status": "derived",
+      "unit": "multiple"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "cash from operations - purchases of property and equipment + proceeds from sales of property and equipment - finance lease principal payments",
+      "inputs": [
+        "val:e0bc589b5ea387b6",
+        "val:92c682727d8b5857",
+        "val:33647fe89c266e8d"
+      ],
+      "metric_id": "fcf.standardized",
+      "metric_version": "1.0.0",
+      "node_id": "calc:de67f4477a9ebb1f",
+      "period_label": "2025FY",
+      "result": null,
+      "source_ids": [
+        "src:39fdf68d1192faa3",
+        "src:232739bcd6565962",
+        "src:6d9b0beee3ea20cc"
+      ],
+      "status": "unresolved",
+      "unit": "USD"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "NOPAT / invested capital",
+      "inputs": [
+        "calc:ef6ebc84a3bd57b5",
+        "calc:63d6da11626ba701"
+      ],
+      "metric_id": "returns.roic",
+      "metric_version": "1.0.0",
+      "node_id": "calc:ede130ecd087e331",
+      "period_label": "2025FY",
+      "result": "0.2069712873779784624880211801776926",
+      "source_ids": [
+        "src:abd34e06313bd5c0",
+        "src:1fba2aafb23e7997",
+        "src:a7fce86d06bb7394"
+      ],
+      "status": "estimated",
+      "unit": "ratio"
+    },
+    {
+      "assumption_ids": [
+        "tax.us_federal_statutory_rate"
+      ],
+      "formula": "operating income * (1 - tax rate)",
+      "inputs": [
+        "val:7416c960acc3de2a"
+      ],
+      "metric_id": "returns.nopat",
+      "metric_version": "1.0.0",
+      "node_id": "calc:ef6ebc84a3bd57b5",
+      "period_label": "2025FY",
+      "result": "101940810000.00",
+      "source_ids": [
+        "src:abd34e06313bd5c0"
+      ],
+      "status": "estimated",
+      "unit": "USD"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "sum(free cash flow_t / (1 + discount rate)^t)",
+      "inputs": [],
+      "metric_id": "vintage.npv",
+      "metric_version": "1.0.0",
+      "node_id": "calc:f61fcb875c7a0f88",
+      "period_label": null,
+      "result": "1195.863666621085700347170644457253",
+      "source_ids": [],
+      "status": "derived",
+      "unit": "USD"
+    },
+    {
+      "assumption_ids": [],
+      "formula": "cash from operations - purchases of property and equipment - finance lease principal payments",
+      "inputs": [
+        "val:e0bc589b5ea387b6",
+        "val:92c682727d8b5857",
+        "val:33647fe89c266e8d"
+      ],
+      "metric_id": "fcf.lease_adjusted",
+      "metric_version": "1.0.0",
+      "node_id": "calc:ff3e47717df969e5",
+      "period_label": "2025FY",
+      "result": "71278000000",
+      "source_ids": [
+        "src:39fdf68d1192faa3",
+        "src:232739bcd6565962",
+        "src:6d9b0beee3ea20cc"
+      ],
+      "status": "derived",
+      "unit": "USD"
+    }
+  ],
+  "charts": [],
+  "claims": [],
+  "disclaimer": "Educational tool. Not investment, legal, tax or accounting advice. No warranty of accuracy. Verify against the cited filings.",
+  "entity_id": "GOOGL",
+  "extra_sources": [],
+  "facts": [
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:eaba937005177618",
+      "is_company_non_gaap": false,
+      "metric_id": "Assets",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000071",
+        "content_sha256": null,
+        "form": "10-Q",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL Assets (2025@4)",
+        "source_id": "src:1fba2aafb23e7997",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "balance_sheet",
+      "status": "reported",
+      "unit": "USD",
+      "value": "595281000000",
+      "xbrl_concept": "Assets"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:39e02de29668d6d9",
+      "is_company_non_gaap": false,
+      "metric_id": "AssetsCurrent",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000071",
+        "content_sha256": null,
+        "form": "10-Q",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL AssetsCurrent (2025@4)",
+        "source_id": "src:b41260f06c455b6d",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "balance_sheet",
+      "status": "reported",
+      "unit": "USD",
+      "value": "206038000000",
+      "xbrl_concept": "AssetsCurrent"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:889d163cada54d78",
+      "is_company_non_gaap": false,
+      "metric_id": "CashAndCashEquivalentsAtCarryingValue",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000071",
+        "content_sha256": null,
+        "form": "10-Q",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL CashAndCashEquivalentsAtCarryingValue (2025@4)",
+        "source_id": "src:644d406f01a3f3fd",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "balance_sheet",
+      "status": "reported",
+      "unit": "USD",
+      "value": "30708000000",
+      "xbrl_concept": "CashAndCashEquivalentsAtCarryingValue"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:bcf12170cfeb78e0",
+      "is_company_non_gaap": false,
+      "metric_id": "Depreciation",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL Depreciation (2025FY)",
+        "source_id": "src:76cab0a25acd1017",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "income_statement",
+      "status": "reported",
+      "unit": "USD",
+      "value": "21136000000",
+      "xbrl_concept": "Depreciation"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:f493bc9b3e018987",
+      "is_company_non_gaap": false,
+      "metric_id": "FinanceLeaseLiability",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000071",
+        "content_sha256": null,
+        "form": "10-Q",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL FinanceLeaseLiability (2025@4)",
+        "source_id": "src:049b01e28fdee7f1",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "balance_sheet",
+      "status": "reported",
+      "unit": "USD",
+      "value": "2500000000",
+      "xbrl_concept": "FinanceLeaseLiability"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:8a1376e7f5beb6ce",
+      "is_company_non_gaap": false,
+      "metric_id": "FinanceLeasePrincipalPayments",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL FinanceLeasePrincipalPayments (2025FY)",
+        "source_id": "src:6d9b0beee3ea20cc",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "cash_flow",
+      "status": "reported",
+      "unit": "USD",
+      "value": "1988000000",
+      "xbrl_concept": "FinanceLeasePrincipalPayments"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:65a32848935e6405",
+      "is_company_non_gaap": false,
+      "metric_id": "IncomeTaxExpenseBenefit",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL IncomeTaxExpenseBenefit (2025FY)",
+        "source_id": "src:75a787107fedf4ad",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "income_statement",
+      "status": "reported",
+      "unit": "USD",
+      "value": "26656000000",
+      "xbrl_concept": "IncomeTaxExpenseBenefit"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:f5042d5d1545b58a",
+      "is_company_non_gaap": false,
+      "metric_id": "Liabilities",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000071",
+        "content_sha256": null,
+        "form": "10-Q",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL Liabilities (2025@4)",
+        "source_id": "src:fc0f8cfd10b84778",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "balance_sheet",
+      "status": "reported",
+      "unit": "USD",
+      "value": "180016000000",
+      "xbrl_concept": "Liabilities"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:3601d581a105acc6",
+      "is_company_non_gaap": false,
+      "metric_id": "LiabilitiesCurrent",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000071",
+        "content_sha256": null,
+        "form": "10-Q",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL LiabilitiesCurrent (2025@4)",
+        "source_id": "src:a7fce86d06bb7394",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "balance_sheet",
+      "status": "reported",
+      "unit": "USD",
+      "value": "102745000000",
+      "xbrl_concept": "LiabilitiesCurrent"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:cac8f234dfaaed0c",
+      "is_company_non_gaap": false,
+      "metric_id": "MarketableSecuritiesCurrent",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000071",
+        "content_sha256": null,
+        "form": "10-Q",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL MarketableSecuritiesCurrent (2025@4)",
+        "source_id": "src:3c902255268d07a5",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "balance_sheet",
+      "status": "reported",
+      "unit": "USD",
+      "value": "96135000000",
+      "xbrl_concept": "MarketableSecuritiesCurrent"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:7a12cc5cc96cf25b",
+      "is_company_non_gaap": false,
+      "metric_id": "NetCashProvidedByUsedInOperatingActivities",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL NetCashProvidedByUsedInOperatingActivities (2025FY)",
+        "source_id": "src:39fdf68d1192faa3",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "cash_flow",
+      "status": "reported",
+      "unit": "USD",
+      "value": "164713000000",
+      "xbrl_concept": "NetCashProvidedByUsedInOperatingActivities"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:cde74bbf491a7ff4",
+      "is_company_non_gaap": false,
+      "metric_id": "NetIncomeLoss",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001308179-26-000342",
+        "content_sha256": null,
+        "form": "DEF 14A",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL NetIncomeLoss (2025FY)",
+        "source_id": "src:219884c2e0c4e01f",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "income_statement",
+      "status": "reported",
+      "unit": "USD",
+      "value": "132170000000",
+      "xbrl_concept": "NetIncomeLoss"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:39fae71386dd32c9",
+      "is_company_non_gaap": false,
+      "metric_id": "OperatingIncomeLoss",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL OperatingIncomeLoss (2025FY)",
+        "source_id": "src:abd34e06313bd5c0",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "income_statement",
+      "status": "reported",
+      "unit": "USD",
+      "value": "129039000000",
+      "xbrl_concept": "OperatingIncomeLoss"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:cba005c0ffaccb5c",
+      "is_company_non_gaap": false,
+      "metric_id": "PaymentsToAcquirePropertyPlantAndEquipment",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL PaymentsToAcquirePropertyPlantAndEquipment (2025FY)",
+        "source_id": "src:232739bcd6565962",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "cash_flow",
+      "status": "reported",
+      "unit": "USD",
+      "value": "91447000000",
+      "xbrl_concept": "PaymentsToAcquirePropertyPlantAndEquipment"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:cc701af4917018d9",
+      "is_company_non_gaap": false,
+      "metric_id": "ResearchAndDevelopmentExpense",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL ResearchAndDevelopmentExpense (2025FY)",
+        "source_id": "src:108426d05b961711",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "income_statement",
+      "status": "reported",
+      "unit": "USD",
+      "value": "61087000000",
+      "xbrl_concept": "ResearchAndDevelopmentExpense"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:9475bf1d53da5625",
+      "is_company_non_gaap": false,
+      "metric_id": "RevenueRemainingPerformanceObligation",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL RevenueRemainingPerformanceObligation (2025@4)",
+        "source_id": "src:0ae156c309fa570d",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "operational",
+      "status": "reported",
+      "unit": "USD",
+      "value": "242800000000",
+      "xbrl_concept": "RevenueRemainingPerformanceObligation"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:8d7cb4a35af85235",
+      "is_company_non_gaap": false,
+      "metric_id": "Revenues",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL Revenues (2025FY)",
+        "source_id": "src:e3f1408e99e3db64",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "income_statement",
+      "status": "reported",
+      "unit": "USD",
+      "value": "402836000000",
+      "xbrl_concept": "Revenues"
+    },
+    {
+      "company_term": null,
+      "confidence": 1.0,
+      "dimensions": {},
+      "entity_id": "GOOGL",
+      "extraction_method": "sec_companyfacts",
+      "fact_id": "fact:1c5649cfe5f16936",
+      "is_company_non_gaap": false,
+      "metric_id": "StockholdersEquity",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source": {
+        "accession": "0001652044-26-000071",
+        "content_sha256": null,
+        "form": "10-Q",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": null,
+        "retrieved_at": null,
+        "section": "XBRL StockholdersEquity (2025@4)",
+        "source_id": "src:014db34ebbe18746",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json"
+      },
+      "statement": "balance_sheet",
+      "status": "reported",
+      "unit": "USD",
+      "value": "415265000000",
+      "xbrl_concept": "StockholdersEquity"
+    }
+  ],
+  "notes": {
+    "facts_extracted": 302,
+    "facts_scope": "period",
+    "restatements": 1,
+    "segment_support": "Company Facts flattens away XBRL dimensions, so segment revenue and operating income are absent from it. Alphabet does report them; reaching them needs the filing's XBRL instance (the [xbrl] extra) rather than this endpoint.",
+    "skipped_entries": 0
+  },
+  "period_label": "2025FY",
+  "provenance": {
+    "command": "python scripts/build_example.py",
+    "created_at": "2026-08-06T06:54:08.471326Z",
+    "package_version": "0.1.0.dev0",
+    "schema_version": "1"
+  },
+  "scenarios": [
+    {
+      "calculations": [
+        {
+          "assumption_ids": [],
+          "formula": "rate where sum(free cash flow_t / (1 + rate)^t) = 0",
+          "inputs": [],
+          "metric_id": "vintage.irr",
+          "metric_version": "1.0.0",
+          "node_id": "calc:1f069cfaaba8c402",
+          "period_label": null,
+          "result": "0.1409576798391117335995659232139588",
+          "source_ids": [],
+          "status": "derived",
+          "unit": "ratio"
+        },
+        {
+          "assumption_ids": [],
+          "formula": "years until cumulative free cash flow turns positive",
+          "inputs": [],
+          "metric_id": "vintage.payback",
+          "metric_version": "1.0.0",
+          "node_id": "calc:58f94e4df577b636",
+          "period_label": null,
+          "result": "3.444071936588519840034483584377020",
+          "source_ids": [],
+          "status": "derived",
+          "unit": "years"
+        },
+        {
+          "assumption_ids": [],
+          "formula": "sum(free cash flow_t / (1 + discount rate)^t)",
+          "inputs": [],
+          "metric_id": "vintage.npv",
+          "metric_version": "1.0.0",
+          "node_id": "calc:f61fcb875c7a0f88",
+          "period_label": null,
+          "result": "1195.863666621085700347170644457253",
+          "source_ids": [],
+          "status": "derived",
+          "unit": "USD"
+        }
+      ],
+      "definition": {
+        "asset_classes": [
+          {
+            "asset_class": "servers",
+            "lead_time_years": "0",
+            "maintenance_rate": "0.08",
+            "operating_margin": "0.55",
+            "residual_value_rate": "0",
+            "revenue_yield": "0.75",
+            "spend": "10000",
+            "status": "scenario",
+            "useful_life_years": "6",
+            "utilization_ramp": [
+              "0.40",
+              "0.70",
+              "0.85"
+            ]
+          }
+        ],
+        "assumption_ids": [
+          "useful_life.servers_and_network.googl",
+          "tax.us_federal_statutory_rate",
+          "discount.required_return"
+        ],
+        "description": "A round-numbers vintage used to demonstrate the engine. The parameters are chosen to be legible, not to estimate any company's returns, and every figure it produces is marked as a scenario. Not an estimate.",
+        "discount_rate": "0.09",
+        "horizon_years": 8,
+        "name": "Illustrative server vintage",
+        "scenario_id": "illustrative-server-vintage",
+        "tax_rate": "0.21"
+      },
+      "irr": {
+        "assumption_ids": [],
+        "confidence": null,
+        "formula_node_id": "calc:1f069cfaaba8c402",
+        "label": "vintage internal rate of return",
+        "period": null,
+        "source_ids": [],
+        "status": "scenario",
+        "unit": "ratio",
+        "value": "0.1409576798391117335995659232139588",
+        "value_id": "calc:1f069cfaaba8c402"
+      },
+      "npv": {
+        "assumption_ids": [],
+        "confidence": null,
+        "formula_node_id": "calc:f61fcb875c7a0f88",
+        "label": "vintage net present value",
+        "period": null,
+        "source_ids": [],
+        "status": "scenario",
+        "unit": "USD",
+        "value": "1195.863666621085700347170644457253",
+        "value_id": "calc:f61fcb875c7a0f88"
+      },
+      "payback": {
+        "assumption_ids": [],
+        "confidence": null,
+        "formula_node_id": "calc:58f94e4df577b636",
+        "label": "vintage payback period",
+        "period": null,
+        "source_ids": [],
+        "status": "scenario",
+        "unit": "years",
+        "value": "3.444071936588519840034483584377020",
+        "value_id": "calc:58f94e4df577b636"
+      },
+      "requirements": [
+        {
+          "description": "No utilization between 0.05 and 1 reaches payback_years of 3. On these assumptions the claim cannot hold anywhere in the plausible range.",
+          "lever": "utilization",
+          "required": null,
+          "searched_high": "1",
+          "searched_low": "0.05",
+          "target": "payback_years",
+          "target_value": "3"
+        }
+      ],
+      "schedule": {
+        "parameters": [
+          {
+            "asset_class": "servers",
+            "lead_time_years": "0",
+            "maintenance_rate": "0.08",
+            "operating_margin": "0.55",
+            "residual_value_rate": "0",
+            "revenue_yield": "0.75",
+            "spend": "10000",
+            "status": "scenario",
+            "useful_life_years": "6",
+            "utilization_ramp": [
+              "0.40",
+              "0.70",
+              "0.85"
+            ]
+          }
+        ],
+        "status": "scenario",
+        "tax_rate": "0.21",
+        "years": [
+          {
+            "capital_outflow": "10000",
+            "depreciation": "1666.666666666666666666666667",
+            "free_cash_flow": "-8590.000000",
+            "in_service": true,
+            "maintenance_capital": "240.000000",
+            "operating_profit": "1650.000000",
+            "residual_value": "0",
+            "revenue": "3000.0000",
+            "tax": "0",
+            "utilization": "0.40",
+            "year": 0
+          },
+          {
+            "capital_outflow": "0",
+            "depreciation": "1666.666666666666666666666667",
+            "free_cash_flow": "2211.125000000000000000000000",
+            "in_service": true,
+            "maintenance_capital": "420.000000",
+            "operating_profit": "2887.500000",
+            "residual_value": "0",
+            "revenue": "5250.0000",
+            "tax": "256.3749999999999999999999999",
+            "utilization": "0.70",
+            "year": 1
+          },
+          {
+            "capital_outflow": "0",
+            "depreciation": "1666.666666666666666666666667",
+            "free_cash_flow": "2609.937500000000000000000000",
+            "in_service": true,
+            "maintenance_capital": "510.000000",
+            "operating_profit": "3506.250000",
+            "residual_value": "0",
+            "revenue": "6375.0000",
+            "tax": "386.3124999999999999999999999",
+            "utilization": "0.85",
+            "year": 2
+          },
+          {
+            "capital_outflow": "0",
+            "depreciation": "1666.666666666666666666666667",
+            "free_cash_flow": "2609.937500000000000000000000",
+            "in_service": true,
+            "maintenance_capital": "510.000000",
+            "operating_profit": "3506.250000",
+            "residual_value": "0",
+            "revenue": "6375.0000",
+            "tax": "386.3124999999999999999999999",
+            "utilization": "0.85",
+            "year": 3
+          },
+          {
+            "capital_outflow": "0",
+            "depreciation": "1666.666666666666666666666667",
+            "free_cash_flow": "2609.937500000000000000000000",
+            "in_service": true,
+            "maintenance_capital": "510.000000",
+            "operating_profit": "3506.250000",
+            "residual_value": "0",
+            "revenue": "6375.0000",
+            "tax": "386.3124999999999999999999999",
+            "utilization": "0.85",
+            "year": 4
+          },
+          {
+            "capital_outflow": "0",
+            "depreciation": "1666.666666666666666666666667",
+            "free_cash_flow": "2609.937500000000000000000000",
+            "in_service": true,
+            "maintenance_capital": "510.000000",
+            "operating_profit": "3506.250000",
+            "residual_value": "0",
+            "revenue": "6375.0000",
+            "tax": "386.3124999999999999999999999",
+            "utilization": "0.85",
+            "year": 5
+          },
+          {
+            "capital_outflow": "0",
+            "depreciation": "0",
+            "free_cash_flow": "0",
+            "in_service": false,
+            "maintenance_capital": "0",
+            "operating_profit": "0",
+            "residual_value": "0",
+            "revenue": "0",
+            "tax": "0",
+            "utilization": "0",
+            "year": 6
+          },
+          {
+            "capital_outflow": "0",
+            "depreciation": "0",
+            "free_cash_flow": "0",
+            "in_service": false,
+            "maintenance_capital": "0",
+            "operating_profit": "0",
+            "residual_value": "0",
+            "revenue": "0",
+            "tax": "0",
+            "utilization": "0",
+            "year": 7
+          },
+          {
+            "capital_outflow": "0",
+            "depreciation": "0",
+            "free_cash_flow": "0",
+            "in_service": false,
+            "maintenance_capital": "0",
+            "operating_profit": "0",
+            "residual_value": "0",
+            "revenue": "0",
+            "tax": "0",
+            "utilization": "0",
+            "year": 8
+          }
+        ]
+      },
+      "sensitivities": [
+        {
+          "high_input": "0.60",
+          "lever": "revenue_yield",
+          "low_input": "0.25",
+          "swing": "5035.874570165383559894294221"
+        },
+        {
+          "high_input": "0.65",
+          "lever": "operating_margin",
+          "low_input": "0.45",
+          "swing": "4295.277840515603946938133038"
+        },
+        {
+          "high_input": "3",
+          "lever": "lead_time_years",
+          "low_input": "0",
+          "swing": "2550.602698240388665495309687"
+        }
+      ]
+    }
+  ],
+  "template": "capital-deployment",
+  "validation": {
+    "results": [
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2023@1",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2023@2",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2023@3",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2023@4",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2024@1",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2024@2",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2024@3",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2024@4",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2025@1",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2025@2",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2025@3",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2025@4",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2026@1",
+        "status": "passed"
+      },
+      {
+        "check": "balance_sheet_identity",
+        "detail": "",
+        "difference": "0",
+        "period_label": "2026@2",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "6888000000",
+        "period_label": "2023YTD2",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "8055000000",
+        "period_label": "2023YTD3",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "11019000000",
+        "period_label": "2023FY",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "13186000000",
+        "period_label": "2024YTD2",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "13061000000",
+        "period_label": "2024YTD3",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "14276000000",
+        "period_label": "2024FY",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "22446000000",
+        "period_label": "2025YTD2",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "23953000000",
+        "period_label": "2025YTD3",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "27851000000",
+        "period_label": "2025FY",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "44924000000",
+        "period_label": "2026YTD2",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "28666000000",
+        "period_label": "2023YTD2",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "30656000000",
+        "period_label": "2023YTD3",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "18915000000",
+        "period_label": "2023FY",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "26640000000",
+        "period_label": "2024YTD2",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "30698000000",
+        "period_label": "2024YTD3",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "39113000000",
+        "period_label": "2024FY",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "27747000000",
+        "period_label": "2025YTD2",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "48414000000",
+        "period_label": "2025YTD3",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "52402000000",
+        "period_label": "2025FY",
+        "status": "passed"
+      },
+      {
+        "check": "ytd_monotonic",
+        "detail": "",
+        "difference": "39069000000",
+        "period_label": "2026YTD2",
+        "status": "passed"
+      }
+    ]
+  },
+  "values": [
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:a0cbf733679405fb",
+      "label": "free cash flow (reported basis)",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:39fdf68d1192faa3",
+        "src:232739bcd6565962"
+      ],
+      "status": "derived",
+      "unit": "USD",
+      "value": "73266000000",
+      "value_id": "calc:a0cbf733679405fb"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:ff3e47717df969e5",
+      "label": "free cash flow (lease-adjusted)",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:39fdf68d1192faa3",
+        "src:232739bcd6565962",
+        "src:6d9b0beee3ea20cc"
+      ],
+      "status": "derived",
+      "unit": "USD",
+      "value": "71278000000",
+      "value_id": "calc:ff3e47717df969e5"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:de67f4477a9ebb1f",
+      "label": "free cash flow (standardized)",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:39fdf68d1192faa3",
+        "src:232739bcd6565962",
+        "src:6d9b0beee3ea20cc"
+      ],
+      "status": "unresolved",
+      "unit": "USD",
+      "value": null,
+      "value_id": "calc:de67f4477a9ebb1f"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:abf7ef5c7ec2c14c",
+      "label": "capex intensity",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:232739bcd6565962",
+        "src:e3f1408e99e3db64"
+      ],
+      "status": "derived",
+      "unit": "ratio",
+      "value": "0.2270080131865076606857381167522267",
+      "value_id": "calc:abf7ef5c7ec2c14c"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:c0355abbdd37d413",
+      "label": "capex to depreciation",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:232739bcd6565962",
+        "src:76cab0a25acd1017"
+      ],
+      "status": "derived",
+      "unit": "multiple",
+      "value": "4.326599167297501892505677517032551",
+      "value_id": "calc:c0355abbdd37d413"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:1e8f864677c3cce4",
+      "label": "net investment in fixed assets",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:232739bcd6565962",
+        "src:76cab0a25acd1017"
+      ],
+      "status": "derived",
+      "unit": "USD",
+      "value": "70311000000",
+      "value_id": "calc:1e8f864677c3cce4"
+    },
+    {
+      "assumption_ids": [
+        "tax.us_federal_statutory_rate"
+      ],
+      "confidence": null,
+      "formula_node_id": "calc:ef6ebc84a3bd57b5",
+      "label": "net operating profit after tax",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:abd34e06313bd5c0"
+      ],
+      "status": "estimated",
+      "unit": "USD",
+      "value": "101940810000.00",
+      "value_id": "calc:ef6ebc84a3bd57b5"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:63d6da11626ba701",
+      "label": "invested capital (operating basis)",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source_ids": [
+        "src:1fba2aafb23e7997",
+        "src:a7fce86d06bb7394"
+      ],
+      "status": "derived",
+      "unit": "USD",
+      "value": "492536000000",
+      "value_id": "calc:63d6da11626ba701"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:6cf5d72b75ed0536",
+      "label": "invested capital (excluding cash)",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2025,
+        "kind": "INSTANT",
+        "start": null
+      },
+      "source_ids": [
+        "src:1fba2aafb23e7997",
+        "src:a7fce86d06bb7394",
+        "src:644d406f01a3f3fd",
+        "src:3c902255268d07a5"
+      ],
+      "status": "derived",
+      "unit": "USD",
+      "value": "365693000000",
+      "value_id": "calc:6cf5d72b75ed0536"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:ede130ecd087e331",
+      "label": "return on invested capital (operating basis)",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:abd34e06313bd5c0",
+        "src:1fba2aafb23e7997",
+        "src:a7fce86d06bb7394"
+      ],
+      "status": "estimated",
+      "unit": "ratio",
+      "value": "0.2069712873779784624880211801776926",
+      "value_id": "calc:ede130ecd087e331"
+    },
+    {
+      "assumption_ids": [],
+      "confidence": null,
+      "formula_node_id": "calc:2593047f3f99dd64",
+      "label": "return on invested capital (excluding cash)",
+      "period": {
+        "end": "2025-12-31",
+        "fiscal_quarter": null,
+        "fiscal_year": 2025,
+        "kind": "FY",
+        "start": "2025-01-01"
+      },
+      "source_ids": [
+        "src:abd34e06313bd5c0",
+        "src:1fba2aafb23e7997",
+        "src:a7fce86d06bb7394",
+        "src:644d406f01a3f3fd",
+        "src:3c902255268d07a5"
+      ],
+      "status": "estimated",
+      "unit": "ratio",
+      "value": "0.2787606270833732119564771543343734",
+      "value_id": "calc:2593047f3f99dd64"
+    }
+  ]
+}

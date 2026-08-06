@@ -1,6 +1,6 @@
 [project]
 name = "capex-atlas"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Reproducible, source-linked models of hyperscaler capital deployment, cash flow, and returns"
 readme = "README.md"
 requires-python = ">=3.12"

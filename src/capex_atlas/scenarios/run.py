@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from capex_atlas.capital_vintages.engine import build_schedule, summarize
 from capex_atlas.capital_vintages.solver import Lever, Target, required_for, tornado
+from capex_atlas.provenance.graph import calculation_graph
 from capex_atlas.scenarios.model import (
     RequirementSummary,
     ScenarioDefinition,
@@ -33,7 +34,10 @@ def run_scenario(
         tax_rate=definition.tax_rate,
         horizon_years=definition.horizon_years,
     )
-    summary = summarize(schedule, discount_rate=definition.discount_rate)
+    # Capture the run's own nodes. Without them a bundle would publish three
+    # scenario figures the audit could not trace.
+    with calculation_graph() as graph:
+        summary = summarize(schedule, discount_rate=definition.discount_rate)
 
     solved = []
     for lever, target, target_value, low, high in requirements:
@@ -84,6 +88,7 @@ def run_scenario(
         irr=summary["irr"],
         payback=summary["payback"],
         schedule=schedule,
+        calculations=tuple(sorted(graph.nodes, key=lambda n: n.node_id)),
         requirements=tuple(solved),
         sensitivities=tuple(bands),
     )

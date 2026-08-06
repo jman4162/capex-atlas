@@ -63,10 +63,66 @@ def audit_bundle(bundle: AnalysisBundle) -> AuditReport:
     for value in bundle.values:
         findings.extend(_audit_value(bundle, value))
 
+    scenario_values = 0
+    for scenario in bundle.scenarios:
+        scenario_values += len(scenario.values)
+        findings.extend(_audit_scenario(bundle, scenario))
+
     findings.extend(_audit_graph(bundle))
     findings.extend(_audit_disclaimer(bundle))
 
-    return AuditReport(findings=tuple(findings), values_checked=len(bundle.values))
+    return AuditReport(
+        findings=tuple(findings),
+        values_checked=len(bundle.values) + scenario_values,
+    )
+
+
+def _audit_scenario(bundle: AnalysisBundle, scenario: object) -> list[AuditFinding]:
+    """Scenario outputs are published figures and get walked like any other.
+
+    They cite no filing, because a what-if rests on assumptions rather than
+    evidence. What they must do instead is name the registry entries they drew
+    on, so a reader can see which choices the answer depends on.
+    """
+    from capex_atlas.scenarios.model import ScenarioResult
+
+    assert isinstance(scenario, ScenarioResult)
+    problems: list[AuditFinding] = []
+    name = scenario.definition.name
+
+    for value in scenario.values:
+        if value.formula_node_id is None or bundle.node(value.formula_node_id) is None:
+            problems.append(
+                AuditFinding(
+                    severity=Severity.ERROR,
+                    value_id=value.value_id,
+                    label=f"{name}: {value.label}",
+                    problem="scenario figure has no calculation node in the bundle",
+                )
+            )
+        if value.status is not EvidenceStatus.SCENARIO and value.is_known:
+            problems.append(
+                AuditFinding(
+                    severity=Severity.ERROR,
+                    value_id=value.value_id,
+                    label=f"{name}: {value.label}",
+                    problem=(
+                        f"a scenario output is marked {value.status.value}; "
+                        "modelled figures are what-ifs"
+                    ),
+                )
+            )
+
+    if not scenario.definition.assumption_ids:
+        problems.append(
+            AuditFinding(
+                severity=Severity.WARNING,
+                value_id=scenario.definition.scenario_id,
+                label=name,
+                problem="names no registry assumptions, so its inputs cannot be traced",
+            )
+        )
+    return problems
 
 
 def _audit_value(bundle: AnalysisBundle, value: object) -> list[AuditFinding]:
