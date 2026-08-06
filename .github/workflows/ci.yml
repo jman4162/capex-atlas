@@ -21,6 +21,8 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
+        # The dev group carries streamlit and plotly, so the lab is exercised here
+        # rather than only imported.
         run: uv sync --group dev
 
       - name: Lint

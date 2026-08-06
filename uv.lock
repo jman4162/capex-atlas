@@ -189,11 +189,13 @@ dev = [
     { name = "hypothesis" },
     { name = "import-linter" },
     { name = "mypy" },
+    { name = "plotly" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "respx" },
     { name = "ruff" },
     { name = "slopscore-lint" },
+    { name = "streamlit" },
 ]
 
 [package.metadata]
@@ -218,11 +220,13 @@ dev = [
     { name = "hypothesis", specifier = ">=6.112" },
     { name = "import-linter", specifier = ">=2.1" },
     { name = "mypy", specifier = ">=1.13" },
+    { name = "plotly", specifier = ">=5.24" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-cov", specifier = ">=5.0" },
     { name = "respx", specifier = ">=0.21" },
     { name = "ruff", specifier = ">=0.14" },
     { name = "slopscore-lint", specifier = ">=0.9.1" },
+    { name = "streamlit", specifier = ">=1.40" },
 ]
 
 [[package]]

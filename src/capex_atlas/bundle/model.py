@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from capex_atlas.accounting.reconciliation import ReconciliationReport
 from capex_atlas.assumptions.models import Assumption
 from capex_atlas.disclaimer import SHORT
+from capex_atlas.scenarios.model import ScenarioResult
 from capex_atlas.schemas.calculation import CalculationNode
 from capex_atlas.schemas.charts import ChartSpec
 from capex_atlas.schemas.claims import ManagementClaim
@@ -72,6 +73,7 @@ class AnalysisBundle(BaseModel):
     assumptions: tuple[Assumption, ...] = ()
     claims: tuple[ManagementClaim, ...] = ()
     charts: tuple[ChartSpec, ...] = ()
+    scenarios: tuple[ScenarioResult, ...] = ()
     validation: ReconciliationReport | None = None
 
     disclaimer: str = SHORT

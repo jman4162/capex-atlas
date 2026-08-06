@@ -1,5 +1,24 @@
-"""OpenTelemetry setup, span helpers and redaction. Lands in M6.
+"""Observability.
 
-Not implemented yet; the package exists so that the import-linter
-contracts in pyproject.toml cover it from the first commit.
+OpenTelemetry is optional; without it every span is a no-op. The attribute policy
+runs either way, so a violation is caught in CI rather than discovered in an
+exporter nobody reads.
 """
+
+from capex_atlas.obs.attributes import (
+    AttributePolicyError,
+    content_digest,
+    sanitize,
+)
+from capex_atlas.obs.tracing import annotate, available, configure, current_trace_id, span
+
+__all__ = [
+    "AttributePolicyError",
+    "annotate",
+    "available",
+    "configure",
+    "content_digest",
+    "current_trace_id",
+    "sanitize",
+    "span",
+]

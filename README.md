@@ -3,9 +3,8 @@
 Turn public filings into reproducible, source-linked models of hyperscaler capital deployment,
 cash flow, capacity economics, and returns on invested capital.
 
-> **Status: pre-release (v0.1 in progress).** Schemas, the provenance kernel, the assumption
-> registry, SEC ingestion and the metric suite are in place. The capital-vintage engine, the analysis
-> bundle and the Streamlit app are not.
+> **Status: pre-release (v0.1 in progress).** The engine, the CLI and the reference app are working
+> end to end for Alphabet. Documentation, a published example bundle and a hosted demo are not done.
 
 > **Not advice.** Capex Atlas is educational software. It is **not investment, legal, tax or
 > accounting advice**, carries **no warranty of accuracy or completeness**, and its authors accept
@@ -75,6 +74,15 @@ uv run lint-imports     # layer boundaries
 uv run pytest
 ./scripts/slopcheck.sh          # prose: slopscore + slopless
 ./scripts/slopcheck.sh score    # slopscore only, no Node needed
+```
+
+Build an analysis and browse it:
+
+```bash
+export CAPEX_ATLAS_SEC_USER_AGENT="you (you@example.com)"   # SEC asks who is calling
+uv run capex-atlas analyze GOOGL --through 2025FY -o examples/googl-2025fy
+uv run capex-atlas audit examples/googl-2025fy    # every value must trace to evidence
+uv run streamlit run apps/streamlit/app.py -- --bundle examples/googl-2025fy
 ```
 
 `lint-imports` enforces the layering that would otherwise require splitting the project into

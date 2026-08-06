@@ -215,15 +215,38 @@ validated data (safe), run agent research (explicit, nondeterministic), approve 
 
 M0 scaffolding ✔ · M1 schemas + provenance + registry ✔ · M2 SEC ingestion + Alphabet adapter +
 reconciliation ✔ · M3 metrics ✔ · M4 capital-vintage engine ✔ · M5 bundle + charts + CLI ✔ ·
-**M6 Streamlit + OTEL** ← next · M7 publish v0.1. Then v0.2 claim ledger, v0.3 Microsoft and Meta,
+M6 Streamlit + OTEL ✔ · **M7 publish v0.1** ← next. Then v0.2 claim ledger, v0.3 Microsoft and Meta,
 v0.4 agents, Oracle later.
 
-Known gaps carried into M6: segment data needs the XBRL instance rather than Company Facts (the
+Known gaps carried into M7: segment data needs the XBRL instance rather than Company Facts (the
 adapter reports this rather than returning an empty list); `roic_rd_capitalized` still takes a
-pre-computed R&D asset and amortization, which the vintage engine could now supply but does not; the
-vintage engine has no path into a bundle, so scenario output cannot yet be frozen; and a bundle
-carries the filer's whole extracted history, which is 97% of its bytes. History is deliberate so
-charts need no re-extraction, but a `--facts used|period|all` switch is the obvious knob.
+pre-computed R&D asset and amortization, which the vintage engine could now supply but does not; a
+bundle carries the filer's whole extracted history, which is most of its bytes, so a
+`--facts used|period|all` switch is wanted; the CLI cannot yet attach a scenario to a bundle even
+though the model supports it; and no example bundle is committed, which M7 needs.
+
+## Front end
+
+`capex_atlas.application.AtlasApplication` is the only thing the Streamlit lab talks to. Pages render
+what it returns and compute nothing, which is what keeps the front end replaceable and every figure
+inside the provenance kernel. `tests/governance/test_app_has_no_analysis.py` enforces it by scanning
+page imports, so adding a metric call to a page fails the build.
+
+```bash
+uv run streamlit run apps/streamlit/app.py -- --bundle examples/googl-2025fy
+```
+
+The app opens a stored bundle rather than fetching, so browsing is offline and reproducible, and
+scenarios run only on an explicit form submission so a slider drag cannot fire one.
+
+## Tracing
+
+`capex_atlas.obs` wraps OpenTelemetry, which is an optional extra: without it every span is a no-op.
+Attributes go through `sanitize()`, which **rejects** rather than truncates anything content-bearing:
+keys naming `quote`, `prompt`, `text`, `transcript` and similar, values over 120 characters, and
+`Decimal` financial values. The policy runs whether or not the SDK is installed, so a violation
+fails in CI rather than surfacing later in an exporter nobody reads. Use `content_digest(text)` when
+a trace needs to identify a passage without carrying it.
 
 ## The audit is the acceptance test
 

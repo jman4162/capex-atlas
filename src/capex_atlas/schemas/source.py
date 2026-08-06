@@ -31,7 +31,7 @@ class SourceReference(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    source_id: str
+    source_id: str = ""
     kind: SourceKind
     url: str | None = None
     accession: str | None = None

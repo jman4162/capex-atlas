@@ -50,6 +50,8 @@ dev = [
     "hypothesis>=6.112",
     "respx>=0.21",
     "slopscore-lint>=0.9.1",
+    "streamlit>=1.40",
+    "plotly>=5.24",
 ]
 
 [build-system]
@@ -106,6 +108,12 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
+
+# Optional extras. The code guards every import, so missing stubs here mean the
+# extra is not installed rather than that something is wrong.
+[[tool.mypy.overrides]]
+module = ["opentelemetry.*", "streamlit.*", "plotly.*"]
+ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
 # Tests
@@ -196,6 +204,9 @@ name = "Layered architecture"
 type = "layers"
 layers = [
     "capex_atlas.cli",
+    # The service layer front ends talk to. Above the bundle so it can compose
+    # loading, auditing and scenarios; below the CLI so both share it.
+    "capex_atlas.application",
     "capex_atlas.bundle",
     "capex_atlas.viz",
     "capex_atlas.scenarios",

@@ -1,5 +1,17 @@
-"""Named scenarios and sensitivity analysis. Lands in M4.
+"""Named scenarios and sensitivity analysis."""
 
-Not implemented yet; the package exists so that the import-linter
-contracts in pyproject.toml cover it from the first commit.
-"""
+from capex_atlas.scenarios.model import (
+    RequirementSummary,
+    ScenarioDefinition,
+    ScenarioResult,
+    SensitivitySummary,
+)
+from capex_atlas.scenarios.run import run_scenario
+
+__all__ = [
+    "RequirementSummary",
+    "ScenarioDefinition",
+    "ScenarioResult",
+    "SensitivitySummary",
+    "run_scenario",
+]
