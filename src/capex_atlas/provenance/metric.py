@@ -33,6 +33,9 @@ from capex_atlas.schemas.values import AnalyticalValue
 INHERIT: Final = "<inherit>"
 """Sentinel for ``unit``: take the unit of the first analytical input."""
 
+OUTPUT_PERIOD_KWARG: Final = "_output_period"
+"""Reserved call-time kwarg naming the result's period explicitly."""
+
 ComputeFn = Callable[..., Decimal | None]
 
 
@@ -59,12 +62,19 @@ class Metric:
 
     def __call__(self, *args: Any, **kwargs: Any) -> AnalyticalValue:
         spec = self.definition
+        # Reserved kernel kwarg. Cross-period metrics cannot infer their own
+        # output period -- a discrete quarter derived by differencing two
+        # year-to-date figures belongs to neither input -- so the caller states it.
+        output_period: FiscalPeriod | None = kwargs.pop(OUTPUT_PERIOD_KWARG, None)
         ordered = [*args, *kwargs.values()]
         analytical = [item for item in ordered if isinstance(item, AnalyticalValue)]
         assumptions = [item for item in ordered if isinstance(item, Assumption)]
 
         self._check_units(analytical)
-        period = self._check_periods(analytical)
+        # Run the period check for its validation regardless, then let an
+        # explicit output period win over the inferred one.
+        inferred_period = self._check_periods(analytical)
+        period = output_period if output_period is not None else inferred_period
 
         input_ids = tuple(item.value_id for item in analytical)
         assumption_ids = tuple(item.assumption_id for item in assumptions)

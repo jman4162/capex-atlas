@@ -203,8 +203,9 @@ layers = [
     "capex_atlas.metrics",
     "capex_atlas.accounting",
     "capex_atlas.adapters",
-    "capex_atlas.normalization",
+    # XBRL parsing consumes period normalization, so it sits above it.
     "capex_atlas.xbrl",
+    "capex_atlas.normalization",
     "capex_atlas.sources",
     "capex_atlas.provenance",
     "capex_atlas.assumptions",

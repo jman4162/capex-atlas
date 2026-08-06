@@ -1,5 +1,16 @@
-"""Fiscal-period, unit and currency normalization, including YTD-to-quarter derivation. Lands in M2.
+"""Fiscal-period, unit and currency normalization."""
 
-Not implemented yet; the package exists so that the import-linter
-contracts in pyproject.toml cover it from the first commit.
-"""
+from capex_atlas.normalization.calendar import KNOWN_CALENDARS, FiscalCalendar
+from capex_atlas.normalization.quarters import (
+    QuarterizationError,
+    discrete_quarter,
+    quarterize_series,
+)
+
+__all__ = [
+    "KNOWN_CALENDARS",
+    "FiscalCalendar",
+    "QuarterizationError",
+    "discrete_quarter",
+    "quarterize_series",
+]

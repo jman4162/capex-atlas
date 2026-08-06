@@ -1,5 +1,15 @@
-"""XBRL fact extraction: SEC Company Facts first, Arelle behind the [xbrl] extra. Lands in M2.
+"""XBRL fact extraction. SEC Company Facts now; Arelle behind the [xbrl] extra later."""
 
-Not implemented yet; the package exists so that the import-linter
-contracts in pyproject.toml cover it from the first commit.
-"""
+from capex_atlas.xbrl.companyfacts import (
+    ExtractionResult,
+    Restatement,
+    SkippedEntry,
+    extract_facts,
+)
+
+__all__ = [
+    "ExtractionResult",
+    "Restatement",
+    "SkippedEntry",
+    "extract_facts",
+]
