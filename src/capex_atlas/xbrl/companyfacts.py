@@ -85,7 +85,7 @@ def extract_facts(
     than a sweep, because a fact nobody has classified onto a statement cannot be
     reconciled and would sit in the dataset unverified.
     """
-    chosen: dict[tuple[str, str, str], tuple[str, dict[str, Any]]] = {}
+    chosen: dict[tuple[str, str, str], tuple[str, dict[str, Any], FiscalPeriod]] = {}
     restatements: list[Restatement] = []
     skipped: list[SkippedEntry] = []
 
@@ -111,12 +111,15 @@ def extract_facts(
             concept=concept,
             unit=unit,
             entry=entry,
-            period=FiscalPeriod.parse(period_label),
+            # Carry the period object through rather than re-parsing its label:
+            # the label alone drops start and end, and the reconciliation layer
+            # needs the real dates.
+            period=period,
             entity_id=entity_id,
             source=source,
             statement=statement_map[concept],
         )
-        for (concept, unit, period_label), (_, entry) in sorted(chosen.items())
+        for (concept, unit, _label), (_, entry, period) in sorted(chosen.items())
     )
     return ExtractionResult(
         facts=facts,
@@ -131,7 +134,7 @@ def _consider(
     unit: str,
     entry: dict[str, Any],
     calendar: FiscalCalendar,
-    chosen: dict[tuple[str, str, str], tuple[str, dict[str, Any]]],
+    chosen: dict[tuple[str, str, str], tuple[str, dict[str, Any], FiscalPeriod]],
     restatements: list[Restatement],
     skipped: list[SkippedEntry],
 ) -> None:
@@ -157,10 +160,10 @@ def _consider(
     incumbent = chosen.get(key)
 
     if incumbent is None:
-        chosen[key] = (filed, entry)
+        chosen[key] = (filed, entry, period)
         return
 
-    incumbent_filed, incumbent_entry = incumbent
+    incumbent_filed, incumbent_entry, _ = incumbent
     if filed <= incumbent_filed:
         return
 
@@ -176,7 +179,7 @@ def _consider(
                 current_accession=entry.get("accn"),
             )
         )
-    chosen[key] = (filed, entry)
+    chosen[key] = (filed, entry, period)
 
 
 def _build_fact(

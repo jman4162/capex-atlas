@@ -1,0 +1,11 @@
+{
+  "googl_companyfacts_trimmed.json": {
+    "sha256": "8ab54d05d141f3cf8cf768faa4c40c4dec498f848eccecc9c639543ae738d273",
+    "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
+    "entity": "Alphabet Inc.",
+    "cik": 1652044,
+    "retrieved": "2026-08-06",
+    "license": "public domain (SEC EDGAR)",
+    "trimmed": "us-gaap only; 13 concepts; periods ending on or after 2023-01-01"
+  }
+}

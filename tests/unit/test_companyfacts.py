@@ -3,6 +3,7 @@ wrong numbers: filing-level fiscal tags and duplicated comparatives."""
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -182,6 +183,17 @@ class TestSelection:
         assert fact.source.is_verifiable
         assert fact.xbrl_concept == "Assets"
         assert fact.statement is Statement.BALANCE_SHEET
+
+    def test_period_dates_survive_extraction(self):
+        # The label alone drops start and end. Reconciliation needs the dates,
+        # and losing them made a downstream check verify nothing at all.
+        document = payload(
+            "NetCashProvidedByUsedInOperatingActivities",
+            [{"start": "2026-01-01", "end": "2026-06-30", "val": 5, "filed": "2026-07-23"}],
+        )
+        period = run(document).facts[0].period
+        assert period.start == date(2026, 1, 1)
+        assert period.end == date(2026, 6, 30)
 
     def test_decimal_precision_survives_json_floats(self):
         document = payload(

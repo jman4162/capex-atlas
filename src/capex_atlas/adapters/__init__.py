@@ -1,6 +1,19 @@
 """Per-company normalization of disclosures that are economically alike but reported
-differently. Lands in M2.
+differently."""
 
-Not implemented yet; the package exists so that the import-linter
-contracts in pyproject.toml cover it from the first commit.
-"""
+from capex_atlas.adapters.alphabet import ADAPTERS, AlphabetAdapter
+from capex_atlas.adapters.base import (
+    Availability,
+    CapitalCategory,
+    CompanyAdapter,
+    SegmentSupport,
+)
+
+__all__ = [
+    "ADAPTERS",
+    "AlphabetAdapter",
+    "Availability",
+    "CapitalCategory",
+    "CompanyAdapter",
+    "SegmentSupport",
+]
