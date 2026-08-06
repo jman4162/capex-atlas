@@ -8,6 +8,7 @@ JSON; nothing here does analysis of its own.
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -26,6 +27,11 @@ from capex_atlas.bundle import (
     headline_table,
     read_bundle,
     write_bundle,
+)
+from capex_atlas.cli.launcher import (
+    app_path,
+    default_bundle,
+    streamlit_available,
 )
 from capex_atlas.disclaimer import FULL, SHORT
 from capex_atlas.schemas.source import SourceReference
@@ -152,6 +158,43 @@ def analyze(
     if output is not None:
         written = write_bundle(bundle, output)
         typer.echo(f"\nwrote {written}")
+
+
+@app.command(name="app")
+def launch_app(
+    bundle: Annotated[
+        Path | None,
+        typer.Option("--bundle", help="Bundle to open. Defaults to the shipped example."),
+    ] = None,
+    port: Annotated[int | None, typer.Option("--port")] = None,
+) -> None:
+    """Open the reference lab in a browser.
+
+    Exists so installing the app extra is usable without a git checkout:
+    the app and the example bundle are both shipped inside the wheel.
+    """
+    if not streamlit_available():
+        typer.echo(
+            "the lab needs the app extra: pip install 'capex-atlas[app]'",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    target = bundle or default_bundle()
+    if target is None:
+        typer.echo(
+            "no bundle to open. Build one first:\n"
+            "  capex-atlas analyze GOOGL --through 2025FY -o my-analysis",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    command = ["streamlit", "run", str(app_path())]
+    if port is not None:
+        command += ["--server.port", str(port)]
+    command += ["--", "--bundle", str(target)]
+    typer.echo(f"opening {target}")
+    raise typer.Exit(subprocess.call(command))
 
 
 @app.command()

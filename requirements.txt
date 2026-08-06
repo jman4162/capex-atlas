@@ -1,0 +1,5 @@
+# Streamlit Community Cloud only. Cloud reads this file and ignores pyproject
+# extras, so it is the shim that installs the package plus its app dependencies.
+#
+# For development use `uv sync --group dev`; for library use `pip install capex-atlas`.
+.[app]

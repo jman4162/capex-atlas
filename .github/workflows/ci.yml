@@ -45,6 +45,13 @@ jobs:
         # fail on the provenance block, which is volatile by design.
         run: uv run capex-atlas audit examples/googl-2025fy
 
+      - name: Package builds and its metadata renders
+        # A packaging break found at tag time is found after the version number
+        # is already spent, so check it on every push.
+        run: |
+          uv build
+          uvx twine check dist/*
+
       - name: README figures are current
         # These are byte-deterministic by construction, so unlike the bundle they
         # can be compared directly. A committed figure that disagrees with the

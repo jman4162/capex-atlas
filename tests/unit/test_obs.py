@@ -2,11 +2,27 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+import textwrap
 from decimal import Decimal
 
 import pytest
 
 from capex_atlas.obs import AttributePolicyError, content_digest, sanitize, span, tracing
+
+PROBE_PREAMBLE = """
+from opentelemetry import trace
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+from capex_atlas.obs import AttributePolicyError, annotate, content_digest, span, tracing
+from capex_atlas.obs.tracing import current_trace_id
+
+assert tracing.configure() is True
+memory = InMemorySpanExporter()
+trace.get_tracer_provider().add_span_processor(SimpleSpanProcessor(memory))
+"""
 
 
 class TestContentCannotReachASpan:
@@ -97,6 +113,95 @@ class TestSpansAreSafeWithoutTheSdk:
         assert recorder.seen == {"capex_atlas.company.ticker": "GOOGL"}
         with pytest.raises(AttributePolicyError):
             tracing.annotate(recorder, {"capex_atlas.filing.text": "z" * 400})
+
+
+class TestTheLivePathWithARealExporter:
+    """Until now the OpenTelemetry-installed branch had never executed anywhere.
+
+    A redaction policy that has only ever run against a no-op is a policy on
+    paper. These drive the real thing.
+
+    In a subprocess, because OpenTelemetry's global tracer provider is one-shot:
+    whichever test ran first would own it for the session and these assertions
+    would silently depend on test order. A clean interpreter is cheaper and more
+    honest than patching two module globals.
+    """
+
+    @staticmethod
+    def run_probe(body: str) -> str:
+        script = PROBE_PREAMBLE + textwrap.dedent(body)
+        finished = subprocess.run(
+            [sys.executable, "-c", script], capture_output=True, text=True, timeout=90
+        )
+        assert finished.returncode == 0, finished.stderr
+        return finished.stdout
+
+    def test_a_span_is_actually_recorded(self):
+        out = self.run_probe(
+            """
+            with span("capex_atlas.metric.calculate", **{"capex_atlas.metric.name": "roic"}):
+                pass
+            [recorded] = memory.get_finished_spans()
+            print(recorded.name, recorded.attributes["capex_atlas.metric.name"])
+            """
+        )
+        assert out.strip() == "capex_atlas.metric.calculate roic"
+
+    def test_no_content_reaches_the_exporter(self):
+        out = self.run_probe(
+            """
+            secret = "Servers are depreciated over six years, a passage from a filing."
+            with span(
+                "capex_atlas.fact.extract",
+                **{
+                    "capex_atlas.company.ticker": "GOOGL",
+                    "capex_atlas.claim.quote_sha256": content_digest(secret),
+                },
+            ):
+                pass
+            [recorded] = memory.get_finished_spans()
+            print(" ".join(f"{k}={v}" for k, v in recorded.attributes.items()))
+            """
+        )
+        assert "depreciated" not in out
+        assert "GOOGL" in out
+
+    def test_a_violation_raises_before_anything_is_exported(self):
+        out = self.run_probe(
+            """
+            try:
+                with span("capex_atlas.fact.extract", **{"capex_atlas.filing.text": "x" * 300}):
+                    pass
+            except AttributePolicyError:
+                print("refused", len(memory.get_finished_spans()))
+            """
+        )
+        # The offending value never reached a processor.
+        assert out.strip() == "refused 0"
+
+    def test_annotate_reaches_a_real_span(self):
+        out = self.run_probe(
+            """
+            with span("capex_atlas.scenario.run") as active:
+                annotate(active, {"capex_atlas.scenario.id": "illustrative"})
+            [recorded] = memory.get_finished_spans()
+            print(recorded.attributes["capex_atlas.scenario.id"])
+            """
+        )
+        assert out.strip() == "illustrative"
+
+    def test_a_trace_id_is_available_inside_a_span(self):
+        out = self.run_probe(
+            """
+            with span("capex_atlas.bundle.publish"):
+                print(current_trace_id())
+            """
+        )
+        assert len(out.strip()) == 32
+
+    def test_configure_reports_success_when_the_sdk_is_present(self):
+        out = self.run_probe("print(tracing.available())")
+        assert out.strip() == "True"
 
 
 def test_the_span_taxonomy_is_namespaced():

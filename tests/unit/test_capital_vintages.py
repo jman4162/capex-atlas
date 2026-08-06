@@ -295,3 +295,70 @@ class TestMixedAssetVintage:
         schedule = build_schedule([shell(), servers()], tax_rate=TAX, horizon_years=12)
         assert schedule.years[10].revenue > 0
         assert schedule.years[10].depreciation > 0
+
+
+class TestTheHonestlyUnknownBranches:
+    """`numerics` makes a point of returning None rather than a plausible number.
+
+    Those were the branches without tests, which is the wrong way round: they are
+    the ones whose whole purpose is refusing to invent an answer.
+    """
+
+    def test_irr_of_an_all_zero_series_is_undefined(self):
+        assert internal_rate_of_return([Decimal(0), Decimal(0)]) is None
+
+    def test_irr_of_an_all_positive_series_is_undefined(self):
+        # Money that only ever comes in has no rate of return on an outlay.
+        assert internal_rate_of_return([Decimal(10), Decimal(20)]) is None
+
+    def test_irr_is_undefined_when_no_root_lies_in_the_bracket(self):
+        # A loss so total that no discount rate down to -99.99% zeroes the NPV.
+        assert internal_rate_of_return([Decimal(-1000), Decimal("0.0001")]) is None
+
+    def test_payback_of_a_series_that_starts_positive_is_immediate_or_absent(self):
+        assert payback_period([Decimal(50), Decimal(50)]) is None
+
+    def test_payback_lands_exactly_on_a_year_boundary(self):
+        # Recovered precisely at the end of year one.
+        assert payback_period([Decimal(-100), Decimal(100), Decimal(0)]) == Decimal(1)
+
+    def test_a_crossing_year_always_has_positive_flow(self):
+        # cumulative = previous + flow, with previous < 0 and cumulative >= 0,
+        # forces flow > 0. The interpolation therefore cannot divide by zero,
+        # which is why no guard for it exists.
+        for flows in ([Decimal(-10), Decimal(10)], [Decimal(-10), Decimal(3), Decimal(8)]):
+            assert payback_period(flows) is not None
+
+    def test_solving_returns_nothing_when_the_range_brackets_no_root(self):
+        from capex_atlas.numerics import solve_for_root
+
+        # Same sign at both ends: nothing in between satisfies the condition.
+        assert solve_for_root(lambda x: x + 10, Decimal(1), Decimal(5)) is None
+
+    def test_solving_returns_an_endpoint_that_is_already_a_root(self):
+        from capex_atlas.numerics import solve_for_root
+
+        assert solve_for_root(lambda x: x - 1, Decimal(1), Decimal(5)) == Decimal(1)
+        assert solve_for_root(lambda x: x - 5, Decimal(1), Decimal(5)) == Decimal(5)
+
+    def test_solving_gives_up_when_the_objective_cannot_be_evaluated(self):
+        from capex_atlas.numerics import solve_for_root
+
+        assert solve_for_root(lambda x: None, Decimal(0), Decimal(1)) is None
+
+    def test_a_requirement_that_cannot_be_evaluated_is_reported_as_unachievable(self):
+        # An IRR target on a vintage that never turns cash-positive: the solver
+        # cannot evaluate the objective, and says so rather than guessing.
+        result = required_for(
+            [servers(revenue_yield=Decimal("0.001"))],
+            lever=Lever.OPERATING_MARGIN,
+            target=Target.IRR,
+            target_value=Decimal("0.15"),
+            tax_rate=TAX,
+            discount_rate=DISCOUNT,
+            horizon_years=8,
+            search_low=Decimal("0.05"),
+            search_high=Decimal("0.95"),
+        )
+        assert not result.achievable
+        assert "cannot hold anywhere" in result.describe()

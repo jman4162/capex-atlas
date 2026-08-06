@@ -145,3 +145,86 @@ def test_an_uncovered_filer_fails_before_the_download(offline_sec: None, tmp_pat
     result = runner.invoke(app, ["analyze", "AAPL", "--data-dir", str(tmp_path / "data")])
     assert result.exit_code != 0
     assert not (tmp_path / "data").exists(), "downloaded before checking coverage"
+
+
+class TestTheCommandsThatReachSec:
+    """`analyze`, `ingest` and `reconcile` had no test coverage at all.
+
+    All three run here against the pinned fixture through a mocked transport, so
+    the bodies execute without touching the network.
+    """
+
+    def test_ingest_reports_what_it_stored(self, offline_sec: None, tmp_path: Path):
+        result = runner.invoke(app, ["ingest", "GOOGL", "--data-dir", str(tmp_path / "data")])
+        assert result.exit_code == 0, result.output
+        assert "us-gaap concepts stored" in result.stdout
+        assert (tmp_path / "data").exists()
+
+    def test_analyze_prints_a_headline_table_with_status(self, offline_sec: None, tmp_path: Path):
+        result = runner.invoke(
+            app, ["analyze", "GOOGL", "--through", "2025FY", "--data-dir", str(tmp_path / "data")]
+        )
+        assert result.exit_code == 0, result.output
+        assert "free cash flow (reported basis)" in result.stdout
+        assert "derived" in result.stdout
+        # Every run carries the short disclaimer.
+        assert "Not investment" in result.stdout
+
+    def test_analyze_writes_a_bundle_that_audits(self, offline_sec: None, tmp_path: Path):
+        target = tmp_path / "out"
+        built = runner.invoke(
+            app,
+            [
+                "analyze",
+                "GOOGL",
+                "--through",
+                "2025FY",
+                "-o",
+                str(target),
+                "--data-dir",
+                str(tmp_path / "data"),
+            ],
+        )
+        assert built.exit_code == 0, built.output
+        audited = runner.invoke(app, ["audit", str(target)])
+        assert audited.exit_code == 0, audited.output
+
+    def test_reconcile_runs_the_identities(self, offline_sec: None, tmp_path: Path):
+        result = runner.invoke(
+            app, ["reconcile", "GOOGL", "--through", "2025FY", "--data-dir", str(tmp_path / "data")]
+        )
+        assert result.exit_code == 0, result.output
+        assert "checks verified" in result.stdout
+
+
+class TestTheAppCommand:
+    """`pip install "capex-atlas[app]"` was unusable: no launcher, and the lab
+    and example were not in the wheel."""
+
+    def test_it_refuses_clearly_when_the_extra_is_missing(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(cli, "streamlit_available", lambda: False)
+        result = runner.invoke(app, ["app"])
+        assert result.exit_code == 1
+        # The guidance goes to stderr, so read the combined output.
+        assert "app extra" in result.output
+
+    def test_it_finds_the_shipped_example_by_default(self):
+        from capex_atlas.cli.launcher import default_bundle
+
+        bundle = default_bundle()
+        assert bundle is not None
+        assert (bundle / "analysis.atlas.json").exists()
+
+    def test_it_launches_streamlit_with_the_bundle(self, monkeypatch: pytest.MonkeyPatch):
+        seen: dict[str, list[str]] = {}
+
+        def fake_call(command: list[str]) -> int:
+            seen["command"] = command
+            return 0
+
+        monkeypatch.setattr(cli, "streamlit_available", lambda: True)
+        monkeypatch.setattr(cli.subprocess, "call", fake_call)
+        result = runner.invoke(app, ["app", "--bundle", "examples/googl-2025fy"])
+        assert result.exit_code == 0
+        assert seen["command"][:2] == ["streamlit", "run"]
+        assert "--bundle" in seen["command"]

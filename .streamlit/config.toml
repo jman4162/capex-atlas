@@ -1,0 +1,16 @@
+# Streamlit Cloud and local theme.
+# Muted and print-like on purpose: the evidence-status marks carry the meaning
+# in these charts, and a saturated theme competes with them.
+
+[theme]
+primaryColor = "#2f5d8a"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f5f7"
+textColor = "#262730"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true

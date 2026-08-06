@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "capex-atlas: source-linked models of hyperscaler capital deployment"
+abstract: >-
+  A Python package that turns SEC filings into reproducible models of capital
+  deployment, cash flow and returns on invested capital for hyperscale cloud and
+  infrastructure operators. Every published figure carries its formula, its
+  assumptions and a citation to a primary source, and an evidence status that
+  distinguishes reported values from derived, estimated and scenario ones. A
+  capital-vintage engine models the lag between capital spending, capacity coming
+  into service and depreciation beginning, and inverts the usual question: rather
+  than estimating a return from inputs no company discloses, it computes what
+  utilization, pricing, margin or delay would have to hold for a stated claim to
+  be true.
+type: software
+authors:
+  - family-names: Hodge
+    given-names: John
+    email: jhodge007@gmail.com
+repository-code: "https://github.com/jman4162/capex-atlas"
+url: "https://github.com/jman4162/capex-atlas"
+license: Apache-2.0
+keywords:
+  - SEC filings
+  - XBRL
+  - capital expenditure
+  - return on invested capital
+  - provenance
+  - reproducible research
+  - AI infrastructure

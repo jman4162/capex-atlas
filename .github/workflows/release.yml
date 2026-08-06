@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Check metadata renders on PyPI
+        # The README is the long description, so a malformed one fails the upload
+        # after the version number is already spent. Catch it here.
+        run: uvx twine check dist/*
+
+      - name: The wheel must be usable without a checkout
+        # The app extra ships the lab and an example bundle. If force-include
+        # breaks, `pip install "capex-atlas[app]"` silently becomes useless.
+        run: |
+          python -m venv /tmp/probe
+          /tmp/probe/bin/pip install --quiet "$(ls dist/*.whl)"
+          bundle=$(/tmp/probe/bin/python -c \
+            "from capex_atlas.cli.launcher import default_bundle; print(default_bundle())")
+          test -n "$bundle" || (echo "no example bundle reached the wheel" && exit 1)
+          /tmp/probe/bin/capex-atlas audit "$bundle"
+          /tmp/probe/bin/python -c \
+            "import capex_atlas, pathlib, sys; \
+             p = pathlib.Path(capex_atlas.__file__).parent / 'py.typed'; \
+             sys.exit(0 if p.exists() else 'py.typed missing from the wheel')"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    # Trusted publishing (OIDC): no API token is stored anywhere. Requires a
+    # one-time pending publisher on pypi.org; see RELEASING.md.
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/capex-atlas
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # PEP 740 attestations call Sigstore, which has transient outages that
+          # block publishing. Provenance is optional; trusted publishing still
+          # authenticates the upload.
+          attestations: false
+          # The moving `v0` action tag also matches `v*`, so a re-trigger would
+          # otherwise fail on an already-published version.
+          skip-existing: true

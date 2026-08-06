@@ -79,8 +79,8 @@ def payback_period(cash_flows: Sequence[Decimal]) -> Decimal | None:
             previous = cumulative
             cumulative += flow
             if cumulative >= 0 and index > 0 and previous < 0:
-                if flow == 0:
-                    return Decimal(index)
+                # Crossing implies flow > 0 strictly: cumulative = previous + flow,
+                # with previous < 0 and cumulative >= 0. So this cannot divide by zero.
                 return Decimal(index - 1) + (-previous / flow)
     return None
 
