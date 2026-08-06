@@ -950,8 +950,8 @@
   "period_label": "2025FY",
   "provenance": {
     "command": "python scripts/build_example.py",
-    "created_at": "2026-08-06T06:54:08.471326Z",
-    "package_version": "0.1.0.dev0",
+    "created_at": "2026-08-06T07:01:12.644485Z",
+    "package_version": "0.1.0",
     "schema_version": "1"
   },
   "scenarios": [
