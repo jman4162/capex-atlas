@@ -1,5 +1,6 @@
-"""ChartSpec rendering. Lands in M5.
+"""Chart rendering. Emits plain Plotly figure dictionaries, so the core package
+needs no plotting dependency and a static site can consume the same JSON."""
 
-Not implemented yet; the package exists so that the import-linter
-contracts in pyproject.toml cover it from the first commit.
-"""
+from capex_atlas.viz.render import ChartDataError, render
+
+__all__ = ["ChartDataError", "render"]

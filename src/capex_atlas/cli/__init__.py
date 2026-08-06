@@ -1,5 +1,5 @@
-"""Typer command line. Lands in M5.
+"""Command line entry point."""
 
-Not implemented yet; the package exists so that the import-linter
-contracts in pyproject.toml cover it from the first commit.
-"""
+from capex_atlas.cli.main import app
+
+__all__ = ["app"]

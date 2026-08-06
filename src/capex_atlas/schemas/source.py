@@ -64,3 +64,16 @@ class SourceReference(BaseModel):
     def is_verifiable(self) -> bool:
         """Whether this reference points at a specific, checkable passage."""
         return bool(self.quote or self.section or self.page)
+
+    def narrow(self, **overrides: Any) -> SourceReference:
+        """Return a more specific citation, with a freshly derived id.
+
+        Use this rather than ``model_copy`` when changing anything the id is
+        built from. ``model_copy`` keeps the old ``source_id``, so a citation
+        pointing at a different filing would silently carry the previous one and
+        every fact in a bundle would appear to come from the same place.
+        """
+        fields = self.model_dump()
+        fields.update(overrides)
+        fields.pop("source_id", None)
+        return SourceReference.model_validate(fields)

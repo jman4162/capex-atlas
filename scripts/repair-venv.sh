@@ -14,9 +14,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# -rf because iCloud duplicates directories as well as files, and a plain rm -f
+# on a directory aborts the script before the reinstall happens.
 removed=0
 while IFS= read -r duplicate; do
-  rm -f "$duplicate"
+  rm -rf "$duplicate"
   removed=$((removed + 1))
 done < <(find .venv \( -name "* [0-9]" -o -name "* [0-9].*" \) 2>/dev/null)
 

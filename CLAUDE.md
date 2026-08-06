@@ -5,9 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Current state
 
 Built: schemas, the provenance kernel, the assumption registry, SEC ingestion, fiscal calendars,
-Company Facts extraction, the Alphabet adapter, reconciliation identities, the metric suite and the
-capital-vintage engine. Still stubs: `bundle`, `viz`, `cli` and `obs`, each carrying a docstring
-naming its milestone so the import-linter contracts cover them from the first commit.
+Company Facts extraction, the Alphabet adapter, reconciliation identities, the metric suite, the
+capital-vintage engine, the analysis bundle, chart rendering and the CLI. Only `obs` is still a stub.
 
 Tests run offline against a hash-pinned Alphabet Company Facts fixture in `tests/fixtures`. Values
 asserted there check the pipeline; they are not published analysis, and `DISCLAIMER.md` applies to
@@ -28,10 +27,19 @@ uv run pytest                              # all
 uv run pytest tests/governance -v          # citations and symmetry
 uv run pytest tests/unit/test_metric.py -q # single file
 uv run pytest -k "status_degrades"         # single test by name
+./scripts/slopcheck.sh                     # prose: slopscore + slopless
+
+export CAPEX_ATLAS_SEC_USER_AGENT="you (you@example.com)"   # SEC requires a contact
+uv run capex-atlas ingest GOOGL
+uv run capex-atlas analyze GOOGL --through 2025FY -o examples/googl-2025fy
+uv run capex-atlas audit examples/googl-2025fy      # acceptance test; non-zero on a broken chain
+uv run capex-atlas verify examples/googl-2025fy     # rebuild and compare
+uv run capex-atlas diff <before> <after>
 ```
 
-If `capex_atlas` fails to import under `uv run`, the editable install is stale: fix with
-`uv sync --group dev --reinstall-package capex-atlas`.
+If `capex_atlas` fails to import under `uv run`, iCloud has duplicated files inside `.venv`. Run
+`./scripts/repair-venv.sh`. It happens often; the durable fix is
+`export UV_PROJECT_ENVIRONMENT="$HOME/.venvs/capex-atlas"`, outside the synced tree.
 
 ## What Capex Atlas is
 
@@ -206,14 +214,24 @@ validated data (safe), run agent research (explicit, nondeterministic), approve 
 ## Build order
 
 M0 scaffolding ✔ · M1 schemas + provenance + registry ✔ · M2 SEC ingestion + Alphabet adapter +
-reconciliation ✔ · M3 metrics ✔ · M4 capital-vintage engine ✔ · **M5 bundle + charts + CLI** ← next ·
-M6 Streamlit + OTEL · M7 publish v0.1. Then v0.2 claim ledger, v0.3 Microsoft and Meta, v0.4 agents,
-Oracle later.
+reconciliation ✔ · M3 metrics ✔ · M4 capital-vintage engine ✔ · M5 bundle + charts + CLI ✔ ·
+**M6 Streamlit + OTEL** ← next · M7 publish v0.1. Then v0.2 claim ledger, v0.3 Microsoft and Meta,
+v0.4 agents, Oracle later.
 
-Known gaps carried into M5: segment data needs the XBRL instance rather than Company Facts (the
+Known gaps carried into M6: segment data needs the XBRL instance rather than Company Facts (the
 adapter reports this rather than returning an empty list); `roic_rd_capitalized` still takes a
-pre-computed R&D asset and amortization, which the vintage engine could now supply but does not; and
-nothing yet writes an `AnalysisBundle`, so results cannot be frozen or diffed between filings.
+pre-computed R&D asset and amortization, which the vintage engine could now supply but does not; the
+vintage engine has no path into a bundle, so scenario output cannot yet be frozen; and a bundle
+carries the filer's whole extracted history, which is 97% of its bytes. History is deliberate so
+charts need no re-extraction, but a `--facts used|period|all` switch is the obvious knob.
+
+## The audit is the acceptance test
+
+`capex-atlas audit <bundle>` walks every published value and exits non-zero if any lacks a
+calculation node, a resolvable source, or a registry-backed assumption. `capex-atlas verify` rebuilds
+a bundle from its inputs and confirms the content matches byte for byte. Both are the real check on
+whether the architecture above them is doing anything; treat a change that makes either pass more
+easily as a regression.
 
 ## Numerical primitives live outside the constant scan
 

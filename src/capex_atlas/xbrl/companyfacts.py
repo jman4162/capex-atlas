@@ -193,12 +193,12 @@ def _build_fact(
     statement: Statement,
 ) -> FinancialFact:
     accession = entry.get("accn")
-    citation = source.model_copy(
-        update={
-            "accession": accession or source.accession,
-            "form": entry.get("form") or source.form,
-            "section": f"XBRL {concept} ({period.label})",
-        }
+    # narrow(), not model_copy(): the id has to be rebuilt from the new fields,
+    # or facts drawn from different filings would all cite the same place.
+    citation = source.narrow(
+        accession=accession or source.accession,
+        form=entry.get("form") or source.form,
+        section=f"XBRL {concept} ({period.label})",
     )
     return FinancialFact(
         entity_id=entity_id,
