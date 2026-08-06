@@ -1,0 +1,82 @@
+# Alphabet Inc. accounting-policy parameters.
+#
+# Every entry here quotes Note 1 of the fiscal-2025 Form 10-K (accession
+# 0001652044-26-000018, filed 2026-02-05). Where the filing discloses a range,
+# the range is the disclosure and any point inside it is the reader's choice, so
+# the two are separate entries with different bases. That distinction is the
+# whole reason the registry exists.
+
+["useful_life.servers_and_network.googl"]
+description = "Depreciable life of servers and network equipment, as disclosed."
+unit = "years"
+basis = "filing_disclosure"
+value = "6"
+entity_id = "GOOGL"
+
+["useful_life.servers_and_network.googl".citation]
+kind = "sec_filing"
+accession = "0001652044-26-000018"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm"
+section = "Note 1. Summary of Significant Accounting Policies - Property and Equipment"
+quote = "We depreciate servers and network equipment generally over a period of six years."
+
+["useful_life.buildings_range.googl"]
+description = """Disclosed range of depreciable lives for data center and office buildings.
+
+A range, not a life. Picking a point inside it is a modelling choice; see
+useful_life.buildings_point.googl."""
+unit = "years"
+basis = "filing_disclosure"
+value = ["7", "40"]
+entity_id = "GOOGL"
+
+["useful_life.buildings_range.googl".citation]
+kind = "sec_filing"
+accession = "0001652044-26-000018"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm"
+section = "Note 1. Summary of Significant Accounting Policies - Property and Equipment"
+quote = "We depreciate data center and office buildings over periods of seven to 40 years."
+
+["useful_life.buildings_point.googl"]
+description = """Single building life used when a schedule needs one number.
+
+Alphabet discloses seven to 40 years and does not say where in that range its
+data centers sit, so any single figure is the reader's assumption and everything
+computed from it is a scenario rather than a measurement."""
+unit = "years"
+basis = "user_input"
+value = "25"
+entity_id = "GOOGL"
+
+["lead_time.technical_infrastructure.googl"]
+description = """Years from cash outlay to assets entering service.
+
+The filing states the lag qualitatively and declines to quantify it, so the
+number is the reader's. The citation below establishes only that the lag is real
+and can run to years, which is what makes near-term free cash flow and near-term
+capacity two different questions."""
+unit = "years"
+basis = "user_input"
+value = "2"
+entity_id = "GOOGL"
+
+["depreciation_start.googl"]
+description = """Whether depreciation begins at purchase or at entry into service.
+
+Zero means depreciation starts only when an asset is placed in service, which is
+what Alphabet discloses. It is the reason a build-out depresses cash long before
+it depresses reported profit."""
+unit = "boolean"
+basis = "filing_disclosure"
+value = "0"
+entity_id = "GOOGL"
+
+["depreciation_start.googl".citation]
+kind = "sec_filing"
+accession = "0001652044-26-000018"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm"
+section = "Note 1. Summary of Significant Accounting Policies - Property and Equipment"
+quote = "Depreciation commences once assets are ready for their intended use and is recorded using the straight-line method over the estimated useful lives of the assets."

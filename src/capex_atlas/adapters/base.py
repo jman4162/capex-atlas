@@ -20,25 +20,8 @@ from typing import Protocol, runtime_checkable
 from pydantic import BaseModel, ConfigDict
 
 from capex_atlas.normalization.calendar import FiscalCalendar
+from capex_atlas.schemas.capital import CapitalCategory
 from capex_atlas.schemas.facts import FinancialFact, Statement
-
-
-class CapitalCategory(StrEnum):
-    """Economic asset classes, which cut across filers' own groupings."""
-
-    LAND = "land"
-    BUILDINGS = "buildings"
-    POWER = "power"
-    COOLING = "cooling"
-    SERVERS = "servers"
-    ACCELERATORS = "accelerators"
-    NETWORKING = "networking"
-    STORAGE = "storage"
-    CAPITALIZED_SOFTWARE = "capitalized_software"
-    FINANCE_LEASES = "finance_leases"
-    CONSTRUCTION_IN_PROGRESS = "construction_in_progress"
-    UNALLOCATED = "unallocated"
-    """The honest bucket. Most reported capex never gets broken out further."""
 
 
 class Availability(StrEnum):
@@ -117,3 +100,12 @@ class CompanyAdapter(Protocol):
     def segment_support(self, source: str) -> SegmentSupport:
         """Whether *source* can supply segment detail for this filer."""
         ...
+
+
+__all__ = [
+    "Availability",
+    "CapitalCategory",
+    "CompanyAdapter",
+    "SegmentSupport",
+    "resolve_series",
+]

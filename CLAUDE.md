@@ -4,10 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-M0 (scaffolding) and M1 (schemas, provenance kernel, assumption registry) are built. Everything from
-M2 on (SEC ingestion, adapters, metrics, the capital-vintage engine, bundles, the Streamlit app)
-is a stub package with a docstring naming its milestone. The stubs exist so the import-linter
-contracts cover each module from its first commit.
+Built: schemas, the provenance kernel, the assumption registry, SEC ingestion, fiscal calendars,
+Company Facts extraction, the Alphabet adapter, reconciliation identities, the metric suite and the
+capital-vintage engine. Still stubs: `bundle`, `viz`, `cli` and `obs`, each carrying a docstring
+naming its milestone so the import-linter contracts cover them from the first commit.
+
+Tests run offline against a hash-pinned Alphabet Company Facts fixture in `tests/fixtures`. Values
+asserted there check the pipeline; they are not published analysis, and `DISCLAIMER.md` applies to
+anything the package emits.
 
 Implementation plan, including milestone sequencing and the conflict-of-interest reasoning:
 `~/.claude/plans/please-create-an-implementation-sorted-donut.md`. The design conversation it came
@@ -202,15 +206,22 @@ validated data (safe), run agent research (explicit, nondeterministic), approve 
 ## Build order
 
 M0 scaffolding ✔ · M1 schemas + provenance + registry ✔ · M2 SEC ingestion + Alphabet adapter +
-reconciliation ✔ · M3 metrics ✔ · **M4 capital-vintage engine** ← next · M5 bundle + charts + CLI ·
+reconciliation ✔ · M3 metrics ✔ · M4 capital-vintage engine ✔ · **M5 bundle + charts + CLI** ← next ·
 M6 Streamlit + OTEL · M7 publish v0.1. Then v0.2 claim ledger, v0.3 Microsoft and Meta, v0.4 agents,
 Oracle later.
 
-Known gaps carried into M4: segment data needs the XBRL instance rather than Company Facts (the
-adapter reports this rather than returning an empty list); no company-specific assumptions are in
-the registry yet, since useful lives live in accounting-policy notes that still have to be read and
-quoted, and M4 needs them; and `roic_rd_capitalized` takes a pre-computed R&D asset and
-amortization, so the schedule that produces them belongs with the vintage engine.
+Known gaps carried into M5: segment data needs the XBRL instance rather than Company Facts (the
+adapter reports this rather than returning an empty list); `roic_rd_capitalized` still takes a
+pre-computed R&D asset and amortization, which the vintage engine could now supply but does not; and
+nothing yet writes an `AnalysisBundle`, so results cannot be frozen or diffed between filings.
+
+## Numerical primitives live outside the constant scan
+
+`numerics.py` sits at the top level, deliberately outside the modelling packages the uncited-constant
+scan covers, because iteration caps and convergence tolerances are properties of the algorithms
+rather than claims about a company. The boundary only holds if it is respected: nothing with economic
+meaning goes in that file. A life, a margin, a ramp or a discount rate is a modelling parameter,
+belongs in the registry, and is passed in.
 
 ## Decimal policy (settled in M3, `schemas/decimals.py`)
 

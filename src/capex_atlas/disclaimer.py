@@ -32,9 +32,9 @@ and no valuations. Consult a qualified professional before acting on anything yo
 **No warranty of accuracy.** The software and its output are provided "as is" and "as available",
 without warranties of any kind, express or implied, including any warranty of accuracy,
 completeness, timeliness, merchantability, fitness for a particular purpose or non-infringement.
-Source filings may contain errors, be amended or be restated. Extraction, mapping and calculation
-may contain errors. Model assumptions may be wrong. Figures are not audited and are not a substitute
-for the filings themselves.
+Source filings may contain errors, be amended or be restated. Extraction and calculation may contain
+errors. Model assumptions may be wrong. Figures are not audited and are not a substitute for the
+filings themselves.
 
 **Verify before relying on anything.** Every published figure carries its formula, its assumptions
 and a citation to a primary source precisely so that a reader can check it. Check it. Evidence
