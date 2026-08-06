@@ -15,8 +15,9 @@ import typer
 
 from capex_atlas import __version__
 from capex_atlas.accounting.reconciliation import CheckStatus, reconcile
-from capex_atlas.adapters.alphabet import AlphabetAdapter
+from capex_atlas.adapters import adapter_for
 from capex_atlas.bundle import (
+    AnalysisBundle,
     FactScope,
     audit_bundle,
     build_analysis,
@@ -84,15 +85,19 @@ def ingest(
     typer.echo(f"source: {source.url}")
 
 
-@app.command()
+@app.command(name="reconcile")
 def reconcile_cmd(
     ticker: TickerArg,
     period: PeriodOpt = "2025FY",
     data_dir: Annotated[Path, typer.Option("--data-dir")] = DEFAULT_DATA,
 ) -> None:
     """Run the accounting identities over a filer's facts."""
+    # Resolve by ticker, and do it before touching the network: there is no
+    # reason to download a filing for a company we cannot analyze. Hardcoding
+    # one adapter here meant `reconcile MSFT` silently applied a December
+    # year-end to a June filer.
+    adapter = adapter_for(ticker)
     payload, source = _load_facts(ticker, data_dir)
-    adapter = AlphabetAdapter()
     extraction = extract_facts(
         payload,
         entity_id=ticker,
@@ -102,10 +107,7 @@ def reconcile_cmd(
     )
     report = reconcile(
         extraction.facts,
-        cumulative_concepts=[
-            "PaymentsToAcquirePropertyPlantAndEquipment",
-            "NetCashProvidedByUsedInOperatingActivities",
-        ],
+        cumulative_concepts=list(adapter.cumulative_concepts()),
     )
     skipped = sum(1 for r in report.results if r.status is CheckStatus.SKIPPED)
     typer.echo(
@@ -134,6 +136,7 @@ def analyze(
     ] = FactScope.ALL,
 ) -> None:
     """Build an analysis bundle and optionally write it out."""
+    adapter_for(ticker)  # fail before the download if the filer is not covered
     payload, source = _load_facts(ticker, data_dir)
     bundle = build_analysis(
         payload,
@@ -197,6 +200,19 @@ def verify(
 ) -> None:
     """Rebuild a bundle from its inputs and confirm it reproduces byte for byte."""
     stored = read_bundle(bundle_path)
+
+    # This command rebuilds from SEC. A bundle produced some other way, such as
+    # the committed example built from a pinned fixture, has different inputs and
+    # would report a difference that says nothing about reproducibility.
+    produced_by = (stored.provenance.command if stored.provenance else None) or "unknown"
+    if not produced_by.startswith("analyze"):
+        typer.echo(
+            f"cannot verify: this bundle was produced by `{produced_by}`, not by `analyze`, "
+            "so rebuilding it from SEC would compare different inputs."
+        )
+        typer.echo("Rebuild it with the command that made it, then compare.")
+        raise typer.Exit(2)
+
     payload, source = _load_facts(stored.entity_id, data_dir)
     rebuilt = build_analysis(
         payload,
@@ -204,14 +220,35 @@ def verify(
         period_label=stored.period_label,
         source=source,
         template=stored.template,
+        # Rebuild under the scope the bundle was written with. Defaulting to ALL
+        # here meant a bundle built with --facts used could never reproduce, and
+        # the command whose job is proving reproducibility always failed on it.
+        facts_scope=FactScope(str(stored.notes.get("facts_scope", FactScope.ALL.value))),
     )
     if content_only(stored) == content_only(rebuilt):
         typer.echo("reproduced: content identical")
         return
+
     typer.echo("DIFFERS from the stored bundle:")
-    for change in diff_bundles(stored, rebuilt).changes:
+    changes = diff_bundles(stored, rebuilt).changes
+    for change in changes:
         typer.echo(f"  {change}")
+    if not changes:
+        # The diff compares published values, assumptions and restatements. A
+        # difference it cannot see is still a difference, so name where it is
+        # rather than reporting nothing.
+        typer.echo(f"  {_where_they_differ(stored, rebuilt)}")
     raise typer.Exit(1)
+
+
+def _where_they_differ(stored: AnalysisBundle, rebuilt: AnalysisBundle) -> str:
+    """Name the sections that differ when the value diff comes back empty."""
+    left = json.loads(content_only(stored))
+    right = json.loads(content_only(rebuilt))
+    sections = sorted(key for key in left | right if left.get(key) != right.get(key))
+    if not sections:
+        return "no section differs, which should be impossible; please report this"
+    return "sections that differ: " + ", ".join(sections)
 
 
 app.command(name="reconcile")(reconcile_cmd)

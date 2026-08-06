@@ -47,14 +47,30 @@ CONCEPT_ALIASES: dict[str, tuple[str, ...]] = {
         "Revenues",
         "RevenueFromContractWithCustomerExcludingAssessedTax",
     ),
+    "cash_flow.operating": ("NetCashProvidedByUsedInOperatingActivities",),
+    "capex.cash": ("PaymentsToAcquirePropertyPlantAndEquipment",),
+    "capex.disposal_proceeds": ("ProceedsFromSaleOfPropertyPlantAndEquipment",),
+    "capex.finance_lease_principal": ("FinanceLeasePrincipalPayments",),
+    "depreciation": ("Depreciation",),
+    "income.operating": ("OperatingIncomeLoss",),
+    "balance.assets": ("Assets",),
+    "balance.current_liabilities": ("LiabilitiesCurrent",),
+    "balance.cash": ("CashAndCashEquivalentsAtCarryingValue",),
+    "balance.marketable_securities": ("MarketableSecuritiesCurrent",),
 }
 """Canonical series to the tags Alphabet has used for them, current tag first.
 
-Alphabet reported revenue under ``RevenueFromContractWithCustomerExcludingAssessedTax``
-through the first quarter of 2025 and under ``Revenues`` afterwards. Reading
-either tag alone produces a history that stops or starts partway through, so the
-series is stitched rather than picked.
+Most map one-to-one, and are listed anyway so the analysis never names a us-gaap
+concept directly: doing that hardcodes one filer's vocabulary into shared code.
+
+Revenue is the case that proves the point. Alphabet reported it under
+``RevenueFromContractWithCustomerExcludingAssessedTax`` through the first quarter
+of 2025 and under ``Revenues`` afterwards, so either tag alone yields a history
+with a cliff in it that never happened.
 """
+
+CUMULATIVE_CONCEPTS: tuple[str, ...] = ("capex.cash", "cash_flow.operating")
+"""Series whose year-to-date totals should grow within a fiscal year."""
 
 CAPEX_CONCEPTS = ("PaymentsToAcquirePropertyPlantAndEquipment",)
 """Cash purchases of property and equipment.
@@ -83,6 +99,9 @@ class AlphabetAdapter:
     def concept_aliases(self) -> dict[str, tuple[str, ...]]:
         return dict(CONCEPT_ALIASES)
 
+    def cumulative_concepts(self) -> tuple[str, ...]:
+        return CUMULATIVE_CONCEPTS
+
     def segment_support(self, source: str) -> SegmentSupport:
         if source == "sec_companyfacts":
             return SegmentSupport(
@@ -100,6 +119,3 @@ class AlphabetAdapter:
             explanation=f"{source} carries dimensional facts",
             known_segments=REPORTED_SEGMENTS,
         )
-
-
-ADAPTERS: dict[str, AlphabetAdapter] = {ENTITY_ID: AlphabetAdapter()}

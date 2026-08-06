@@ -1,12 +1,8 @@
 """The analysis bundle: build it, write it, audit it, diff it."""
 
+from capex_atlas.adapters import UnsupportedEntityError
 from capex_atlas.bundle.audit import AuditFinding, AuditReport, Severity, audit_bundle
-from capex_atlas.bundle.builder import (
-    FactScope,
-    UnsupportedEntityError,
-    build_analysis,
-    headline_table,
-)
+from capex_atlas.bundle.builder import FactScope, build_analysis, headline_table
 from capex_atlas.bundle.diff import BundleDiff, Change, ChangeKind, diff_bundles
 from capex_atlas.bundle.io import (
     BUNDLE_FILE,

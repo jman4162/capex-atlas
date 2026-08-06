@@ -94,7 +94,18 @@ class CompanyAdapter(Protocol):
         ...
 
     def concept_aliases(self) -> dict[str, tuple[str, ...]]:
-        """Canonical series names to the tags this filer has used, current first."""
+        """Canonical series names to the tags this filer has used, current first.
+
+        Every concept the analysis needs is resolved through here, not just the
+        ones that migrated. Filers disagree on tags for the same line item --
+        Microsoft reports ``DepreciationDepletionAndAmortization`` where Alphabet
+        reports ``Depreciation`` -- so a caller that names a us-gaap concept
+        directly has hardcoded one company's vocabulary.
+        """
+        ...
+
+    def cumulative_concepts(self) -> tuple[str, ...]:
+        """Canonical series whose year-to-date totals should be checked for growth."""
         ...
 
     def segment_support(self, source: str) -> SegmentSupport:
@@ -102,10 +113,54 @@ class CompanyAdapter(Protocol):
         ...
 
 
+#: Canonical series every adapter must alias. The analysis asks for these names;
+#: adapters map them onto whatever tags their filer actually uses.
+REQUIRED_SERIES: tuple[str, ...] = (
+    "revenue.total",
+    "cash_flow.operating",
+    "capex.cash",
+    "capex.disposal_proceeds",
+    "capex.finance_lease_principal",
+    "depreciation",
+    "income.operating",
+    "balance.assets",
+    "balance.current_liabilities",
+    "balance.cash",
+    "balance.marketable_securities",
+)
+
+
+def resolve_value_series(
+    facts: Sequence[FinancialFact],
+    adapter: CompanyAdapter,
+    canonical: str,
+) -> dict[str, FinancialFact]:
+    """Resolve one canonical series for *adapter*, stitched across its tags."""
+    concepts = adapter.concept_aliases().get(canonical, ())
+    if not concepts:
+        return {}
+    return resolve_series(facts, concepts)
+
+
+def concrete_concepts(adapter: CompanyAdapter, canonical: Sequence[str]) -> list[str]:
+    """Expand canonical series names into the us-gaap tags this filer uses.
+
+    Needed wherever a component works on raw facts, such as reconciliation,
+    which matches on the tag recorded against each fact.
+    """
+    aliases = adapter.concept_aliases()
+    expanded: list[str] = []
+    for name in canonical:
+        expanded.extend(aliases.get(name, ()))
+    return list(dict.fromkeys(expanded))
+
+
 __all__ = [
+    "REQUIRED_SERIES",
     "Availability",
     "CapitalCategory",
     "CompanyAdapter",
     "SegmentSupport",
     "resolve_series",
+    "resolve_value_series",
 ]

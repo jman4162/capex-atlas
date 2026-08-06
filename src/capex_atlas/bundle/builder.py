@@ -19,8 +19,8 @@ from typing import Any
 
 from capex_atlas import __version__
 from capex_atlas.accounting.reconciliation import reconcile
-from capex_atlas.adapters.alphabet import AlphabetAdapter
-from capex_atlas.adapters.base import resolve_series
+from capex_atlas.adapters import adapter_for
+from capex_atlas.adapters.base import concrete_concepts, resolve_value_series
 from capex_atlas.assumptions.models import Assumption
 from capex_atlas.assumptions.registry import AssumptionRegistry
 from capex_atlas.bundle.model import AnalysisBundle, BundleProvenance
@@ -44,24 +44,7 @@ from capex_atlas.schemas.source import SourceReference
 from capex_atlas.schemas.values import AnalyticalValue
 from capex_atlas.xbrl.companyfacts import extract_facts
 
-ADAPTERS: dict[str, AlphabetAdapter] = {"GOOGL": AlphabetAdapter()}
-
-CFO = "NetCashProvidedByUsedInOperatingActivities"
-CAPEX = "PaymentsToAcquirePropertyPlantAndEquipment"
-DISPOSALS = "ProceedsFromSaleOfPropertyPlantAndEquipment"
-LEASE_PRINCIPAL = "FinanceLeasePrincipalPayments"
-DEPRECIATION = "Depreciation"
-OPERATING_INCOME = "OperatingIncomeLoss"
-ASSETS = "Assets"
-CURRENT_LIABILITIES = "LiabilitiesCurrent"
-CASH = "CashAndCashEquivalentsAtCarryingValue"
-SECURITIES = "MarketableSecuritiesCurrent"
-
 TAX_ASSUMPTION = "tax.us_federal_statutory_rate"
-
-
-class UnsupportedEntityError(KeyError):
-    pass
 
 
 class FactScope(StrEnum):
@@ -116,12 +99,7 @@ def build_analysis(
     scenarios: Sequence[ScenarioResult] = (),
 ) -> AnalysisBundle:
     """Turn a Company Facts payload into a frozen analysis for one period."""
-    adapter = ADAPTERS.get(entity_id)
-    if adapter is None:
-        raise UnsupportedEntityError(
-            f"no adapter for {entity_id!r}. Covered filers: {sorted(ADAPTERS)}. "
-            "Amazon and AWS are out of scope; see DISCLOSURE.md."
-        )
+    adapter = adapter_for(entity_id)
 
     registry = registry or AssumptionRegistry.load()
     extraction = extract_facts(
@@ -132,25 +110,26 @@ def build_analysis(
         statement_map=adapter.statement_map(),
     )
 
-    indexed = {(f.metric_id, f.period.label): f for f in extraction.facts}
-    revenue_series = resolve_series(extraction.facts, adapter.concept_aliases()["revenue.total"])
+    # Every series goes through the adapter, stitched across whatever tags the
+    # filer has used. Naming a us-gaap concept here would bake one company's
+    # vocabulary into shared code.
+    series = {
+        name: resolve_value_series(extraction.facts, adapter, name)
+        for name in adapter.concept_aliases()
+    }
     balance_label = _balance_label(extraction.facts, period_label)
 
-    def fact(concept: str, label: str) -> FinancialFact | None:
-        return indexed.get((concept, label))
-
-    def value(concept: str, label: str) -> AnalyticalValue | None:
-        found = fact(concept, label)
+    def value(canonical: str, label: str | None) -> AnalyticalValue | None:
+        if label is None:
+            return None
+        found = series.get(canonical, {}).get(label)
         return AnalyticalValue.from_fact(found) if found else None
 
-    revenue_fact = revenue_series.get(period_label)
-    revenue = AnalyticalValue.from_fact(revenue_fact) if revenue_fact else None
     tax_rate = registry.get(TAX_ASSUMPTION)
 
     with calculation_graph() as graph:
         results = _compute(
             value=value,
-            revenue=revenue,
             period_label=period_label,
             balance_label=balance_label,
             tax_rate=tax_rate,
@@ -158,7 +137,10 @@ def build_analysis(
 
     # Reconcile over everything extracted, then keep only what the caller asked
     # to carry. Narrowing before the checks would weaken them silently.
-    report = reconcile(extraction.facts, cumulative_concepts=[CAPEX, CFO])
+    report = reconcile(
+        extraction.facts,
+        cumulative_concepts=concrete_concepts(adapter, adapter.cumulative_concepts()),
+    )
     used_facts = _select_facts(
         extraction.facts,
         results,
@@ -203,24 +185,24 @@ def build_analysis(
 def _compute(
     *,
     value: Any,
-    revenue: AnalyticalValue | None,
     period_label: str,
     balance_label: str | None,
     tax_rate: Assumption,
 ) -> list[AnalyticalValue]:
-    cfo = value(CFO, period_label)
-    capex = value(CAPEX, period_label)
-    depreciation = value(DEPRECIATION, period_label)
-    operating_income = value(OPERATING_INCOME, period_label)
+    cfo = value("cash_flow.operating", period_label)
+    capex = value("capex.cash", period_label)
+    depreciation = value("depreciation", period_label)
+    operating_income = value("income.operating", period_label)
+    revenue = value("revenue.total", period_label)
 
     results = [
         reported_fcf(cfo, capex),
-        lease_adjusted_fcf(cfo, capex, value(LEASE_PRINCIPAL, period_label)),
+        lease_adjusted_fcf(cfo, capex, value("capex.finance_lease_principal", period_label)),
         standardized_fcf(
             cfo,
             capex,
-            value(DISPOSALS, period_label),
-            value(LEASE_PRINCIPAL, period_label),
+            value("capex.disposal_proceeds", period_label),
+            value("capex.finance_lease_principal", period_label),
         ),
         capex_intensity(capex, revenue),
         capex_to_depreciation(capex, depreciation),
@@ -230,13 +212,14 @@ def _compute(
     if balance_label is not None:
         profit = nopat(operating_income, tax_rate)
         operating_capital = invested_capital_operating(
-            value(ASSETS, balance_label), value(CURRENT_LIABILITIES, balance_label)
+            value("balance.assets", balance_label),
+            value("balance.current_liabilities", balance_label),
         )
         capital_ex_cash = invested_capital_ex_cash(
-            value(ASSETS, balance_label),
-            value(CURRENT_LIABILITIES, balance_label),
-            value(CASH, balance_label),
-            value(SECURITIES, balance_label),
+            value("balance.assets", balance_label),
+            value("balance.current_liabilities", balance_label),
+            value("balance.cash", balance_label),
+            value("balance.marketable_securities", balance_label),
         )
         results.extend(
             [
