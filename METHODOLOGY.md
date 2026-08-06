@@ -17,7 +17,7 @@ Every number carries one of five statuses, and calculations degrade to their wea
 | ! | unresolved | Could not be determined from available evidence. |
 
 Two consequences worth stating plainly. A calculation is never itself *reported*, however solid its
-inputs — combining two disclosed figures produces a derived number, because the combination is the
+inputs. Combining two disclosed figures produces a derived number, because the combination is the
 analyst's choice. And a calculation touching anything undetermined comes out undetermined rather
 than defaulting to zero, because a missing input and a zero input are different claims about the
 world.
@@ -26,10 +26,10 @@ world.
 
 No model parameter is a literal in a function body. Each is a registry entry declaring its basis:
 
-- `filing_disclosure` — stated in a filing; requires an accession and a quotable passage.
-- `derived_from_facts` — computed at runtime; pins no fixed value.
-- `published_third_party` — from a citable non-company source; requires a URL.
-- `user_input` — chosen by whoever runs the model; any stored value is illustrative only.
+- `filing_disclosure`: stated in a filing; requires an accession and a quotable passage.
+- `derived_from_facts`: computed at runtime; pins no fixed value.
+- `published_third_party`: from a citable non-company source; requires a URL.
+- `user_input`: chosen by whoever runs the model; any stored value is illustrative only.
 
 There is no basis for an author's unsupported judgement. That is not a rhetorical position: an
 unsourced number can only enter as `user_input`, and everything computed from it is visibly a
@@ -38,7 +38,7 @@ scenario.
 ## Definitions offered, not settled
 
 *Not yet implemented (M3).* Where practice genuinely disagrees, the package will offer named
-alternatives rather than one blessed figure — several free-cash-flow definitions, conventional and
+alternatives rather than one blessed figure: several free-cash-flow definitions, conventional and
 lease-adjusted and R&D-adjusted returns, and multiple maintenance-capex estimators. Comparing
 companies on headline capex without normalizing for cash versus accrued capex, finance and operating
 leases, purchase commitments, asset mix, useful lives, fiscal calendars, acquisitions and segment

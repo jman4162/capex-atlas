@@ -1,0 +1,14 @@
+{
+  "name": "capex-atlas-prose",
+  "private": true,
+  "description": "Prose linting for the Capex Atlas docs. The package itself is Python; this exists only to pin slopless.",
+  "scripts": {
+    "slop": "slopless \"*.md\" \"docs/**/*.md\""
+  },
+  "devDependencies": {
+    "slopless": "0.2.35"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

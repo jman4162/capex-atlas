@@ -15,8 +15,8 @@ class EvidenceStatus(StrEnum):
     """How much epistemic weight a number carries.
 
     The order below is the strength order. ``UNRESOLVED`` is deliberately the
-    weakest: a calculation that depends on something we could not determine is
-    itself undetermined, not merely an estimate.
+    weakest: a calculation depending on something we could not determine is
+    itself undetermined, which is a weaker claim than an estimate.
     """
 
     REPORTED = "reported"

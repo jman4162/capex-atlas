@@ -28,6 +28,10 @@ venv/
 coverage.xml
 htmlcov/
 
+# Node, present only to pin the slopless prose linter
+node_modules/
+.slopless/
+
 # Editor / OS
 .DS_Store
 .idea/

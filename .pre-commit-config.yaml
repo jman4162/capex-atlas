@@ -17,6 +17,17 @@ repos:
         args: [--maxkb=512]
       - id: check-merge-conflict
 
+  # Markdown and Python docstrings. slopless is the other half of the prose gate,
+  # but it needs Node, so it runs in CI rather than forcing every contributor to
+  # install a JS toolchain to edit a docstring. Run it locally with `npm run slop`.
+  - repo: https://github.com/jman4162/slopscore
+    rev: v0.9.1
+    hooks:
+      - id: slopscore-lint
+        args: ["--profile", "technical", "--fail-on", "medium"]
+        files: '\.(md|py)$'
+        exclude: '\.local\.md$'
+
   - repo: local
     hooks:
       - id: governance

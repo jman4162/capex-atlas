@@ -138,7 +138,8 @@ class Metric:
             result = self._compute(*_unwrap_all(args), **_unwrap_map(kwargs))
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             # A zero denominator is a real analytical outcome (no invested
-            # capital, no revenue yet), not a crash. It is unresolved, not zero.
+            # capital, no revenue yet) rather than a crash, and it resolves to
+            # unknown. Returning zero here would assert something false.
             return None, EvidenceStatus.UNRESOLVED
 
         if result is None:

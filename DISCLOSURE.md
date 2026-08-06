@@ -1,29 +1,42 @@
-# Disclosure and conflict-of-interest controls
+# Disclosure and analytical controls
 
 ## Disclosure
 
 John Hodge, the author, works at Amazon Web Services. Capex Atlas is a personal project developed on
-personal time and equipment. It uses only public sources: SEC filings, earnings releases,
+personal time and equipment, using only public sources: SEC filings, earnings releases,
 presentations and public statements. It contains no confidential or non-public information about any
-company, including the author's employer.
+company.
 
-The project is not affiliated with, endorsed by, or speaking on behalf of Amazon or any other
-company it analyzes. Nothing it produces is investment advice. It emits no ratings, no price
-targets, and no recommendations.
+The project is not affiliated with, endorsed by, or speaking on behalf of any company it analyzes.
+Nothing it produces is investment advice. It emits no ratings, no price targets, and no
+recommendations.
 
-## Why this needs more than a disclaimer
+## Amazon and AWS are out of scope
 
-The obvious risk — quoting something non-public — is not the real one. This package's capital-vintage
-engine exists to infer utilization ramps, asset lives and capacity lead times. Those are exactly the
-quantities someone working in cloud infrastructure would have private views about. A default like
-`utilization_ramp = [0.35, 0.60, 0.78, 0.85]` sitting unexplained in a function body is
-indistinguishable from an informed leak whether or not it is one, and no reader could tell the
-difference.
+Capex Atlas does not analyze Amazon or AWS, and will not. Coverage is Alphabet first, then Microsoft
+and Meta, then Oracle.
 
-Excluding Amazon from the analysis would not fix that. It would leave an AWS employee modelling the
-unit economics of Azure and Google Cloud while conspicuously skipping AWS — a worse posture, and one
-that makes the omission itself the story. The answer is to make the provenance of every parameter
-checkable, for every company equally.
+This is stated plainly rather than handled by quietly leaving one company off the list, because a
+gap a reader notices on their own invites worse explanations than the real one. The real one: an AWS
+employee publishing models of their employer's capital returns is a conflict worth avoiding outright
+rather than managing.
+
+The exclusion has a cost, and it is worth naming. Amazon reports the most legible cloud segment of
+the group and its management has given the most explicit account of the capital cycle, so the
+package omits the clearest available teaching example. Readers who want that comparison will have to
+build it themselves.
+
+## Why the controls exist anyway
+
+The obvious risk in a project like this is quoting something non-public. That is not the interesting
+one. The capital-vintage engine infers utilization ramps, asset lives and capacity lead times, and
+those are quantities anyone working in cloud infrastructure holds private views about. A default
+like `utilization_ramp = [0.35, 0.60, 0.78, 0.85]` sitting unexplained in a function body would be
+indistinguishable from an informed leak whether or not it was one, and no reader could tell.
+
+Excluding Amazon does not fix that, because the same private priors would shape a model of anyone
+else's infrastructure. The controls below are what make the provenance of every parameter checkable,
+for every company equally, and they would be worth keeping even with no conflict in sight.
 
 ## Controls
 
@@ -41,20 +54,12 @@ that filer's accounting-policy disclosure.
 
 Enforced by `tests/governance/test_registry_integrity.py`.
 
-**3. Sequencing.** The methodology was built and applied to Alphabet first. The Amazon adapter comes
-afterward, reusing a model that was fixed before it arrived — the strongest available evidence that
-nothing was tuned around inside knowledge. The Amazon adapter gets a line-by-line citation audit at
-review.
+**3. No operational claims beyond the filings.** The project never asserts real server lifetimes,
+utilization rates, failure rates, power efficiency or cost curves for any company, except as those
+companies disclose them. Generated prose will be checked against the fact table by the
+narrative-grounding evaluation; until that ships, it is a manual review step.
 
-**4. No operational claims beyond the filings.** The project never asserts real server lifetimes,
-utilization rates, failure rates, power efficiency or cost curves for any company, including AWS,
-except as those companies disclose them. Generated prose will be checked against the fact table by
-the narrative-grounding evaluation; until that ships, it is a manual review step.
-
-**5. Employer clearance.** Outside-activity and open-source review with the employer precedes public
-release of the Amazon-specific work.
-
-**6. Hygiene.** Personal GitHub, personal time and equipment, no employer branding or trademarks, no
+**4. Hygiene.** Personal GitHub, personal time and equipment, no employer branding or trademarks, no
 trading on the basis of anything modelled here.
 
 ## For contributors
@@ -62,4 +67,6 @@ trading on the basis of anything modelled here.
 These controls apply to everyone, not just the author. A pull request that hardcodes a modelling
 constant will fail CI regardless of who wrote it or how reasonable the number looks. If a parameter
 genuinely cannot be cited, it belongs in the registry as `user_input`, with the resulting scenario
-status shown to the reader — that is the honest treatment, not a workaround.
+status shown to the reader. That is the honest treatment rather than a workaround.
+
+Pull requests adding Amazon or AWS coverage will be declined. See above.

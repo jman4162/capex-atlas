@@ -49,6 +49,7 @@ dev = [
     "import-linter>=2.1",
     "hypothesis>=6.112",
     "respx>=0.21",
+    "slopscore-lint>=0.9.1",
 ]
 
 [build-system]
@@ -120,6 +121,18 @@ markers = [
 [tool.coverage.run]
 source = ["src/capex_atlas"]
 branch = true
+
+# ---------------------------------------------------------------------------
+# Prose linting
+#
+# Two linters, because measured on this repo they overlap on roughly one rule.
+# slopscore reads Markdown and Python docstrings; slopless (npm, see package.json)
+# reads Markdown only but catches structural patterns slopscore does not.
+# ---------------------------------------------------------------------------
+
+[tool.slopscore]
+profile = "technical"
+strictness = "conservative"
 
 # ---------------------------------------------------------------------------
 # Layer boundaries

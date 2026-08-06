@@ -5,13 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Current state
 
 M0 (scaffolding) and M1 (schemas, provenance kernel, assumption registry) are built. Everything from
-M2 on — SEC ingestion, adapters, metrics, the capital-vintage engine, bundles, the Streamlit app —
+M2 on (SEC ingestion, adapters, metrics, the capital-vintage engine, bundles, the Streamlit app)
 is a stub package with a docstring naming its milestone. The stubs exist so the import-linter
 contracts cover each module from its first commit.
 
 Implementation plan, including milestone sequencing and the conflict-of-interest reasoning:
 `~/.claude/plans/please-create-an-implementation-sorted-donut.md`. The design conversation it came
-from is `BACKGROUND_INFORMATION.local.md` (untracked; design input, not a spec to quote).
+from is `BACKGROUND_INFORMATION.local.md` (untracked; treat it as design input to weigh).
 
 ## Commands
 
@@ -33,7 +33,8 @@ If `capex_atlas` fails to import under `uv run`, the editable install is stale: 
 
 An open-source Python package (`capex_atlas`) that turns public filings and earnings disclosures
 into reproducible, source-linked models of hyperscaler capital deployment, cash flow, capacity
-economics, and returns on invested capital. Target companies: AMZN, GOOGL, MSFT, META, ORCL.
+economics, and returns on invested capital. Target companies: GOOGL, MSFT, META, ORCL. Amazon and
+AWS are excluded; see "Build order" below.
 
 It is deliberately **not** an "AI equity analyst." The governing boundary:
 
@@ -65,10 +66,10 @@ Run `uv run lint-imports` after moving code between modules. Splitting into sepa
 later is mechanical because these boundaries already hold.
 
 Agent layers (`[agents]`, `[strands]`) land in v0.4, framework-neutral Protocols first.
-`apps/streamlit` holds no analytical logic — pages call an `AtlasApplication` service layer.
+`apps/streamlit` holds no analytical logic; pages call an `AtlasApplication` service layer.
 
-Framework decisions and their rationale: Strands is an installable extra, never a hard dependency —
-it is model-first, which is the wrong control model for accounting transformations. PydanticAI is
+Framework decisions and their rationale: Strands is an installable extra, never a hard dependency,
+because it is model-first, which is the wrong control model for accounting transformations. PydanticAI is
 the alternative default for the agent layer. LangGraph only if persistent, resumable, human-in-loop
 research sessions become necessary. Do not model ETL or accounting steps as agent nodes.
 
@@ -77,7 +78,7 @@ research sessions become necessary. Do not model ETL or accounting steps as agen
 These are the substance of the project; code that breaks them is wrong even if it runs.
 
 1. **Reported, derived, estimated, and scenario values never mix silently.** Every analytical value
-   carries an `EvidenceStatus` in the data model, not just in UI styling
+   carries an `EvidenceStatus` in the data model itself, where UI styling merely reflects it
    (● Reported / ◆ Derived / ▲ Estimated / ○ Scenario / ! Unresolved).
 2. **Agents never mutate reported facts.** They may propose mappings, extract claims, and draft
    prose. Mappings that change a financial calculation require human approval.
@@ -90,13 +91,13 @@ These are the substance of the project; code that breaks them is wrong even if i
    distinct things: what was reported, what management said, what the model derives, what the
    analyst believes.
 7. **No definitive single answer where the data cannot support one.** Do not publish one
-   maintenance-capex number, one "correct" ROIC, or a forced AI/non-AI capex split — offer named
+   maintenance-capex number, one "correct" ROIC, or a forced AI/non-AI capex split. Offer named
    alternative definitions/estimators and keep "unallocated" as an honest category.
 8. **Never compare headline capex across companies without normalizing** cash capex, accrued capex,
    finance and operating leases, purchase commitments, asset mix, useful lives, fiscal calendars,
    acquisitions, and segment definitions.
 9. **Never emit a stock rating.** The defensible output form is: "Under these disclosed facts and
-   these explicit assumptions, the implied return range is X–Y%; the largest sensitivities are …"
+   these explicit assumptions, the implied return range is X to Y percent; the largest sensitivities are …"
 
 ## The two mechanisms (built; read these before touching the calculation layer)
 
@@ -107,7 +108,7 @@ cross-period metrics like lagged incremental ROIC. The decorator unwraps `Analyt
 `Assumption` inputs, checks units and periods, builds the `CalculationNode`, records it in the
 active `calculation_graph()`, and returns an `AnalyticalValue`. Behaviour worth knowing:
 
-- Output status is `weakest(DERIVED, *input statuses)` — a calculation is never `reported`.
+- Output status is `weakest(DERIVED, *input statuses)`, so a calculation is never `reported`.
 - Any `None` input short-circuits to `UNRESOLVED` (override with `allow_missing_inputs=True`).
 - `DivisionByZero` / `InvalidOperation` become `UNRESOLVED`, not a crash and not zero.
 - Node ids are content-addressed, so identical work dedupes and a non-deterministic metric raises
@@ -133,19 +134,20 @@ concept, period, unit, dimensions) so the reconciliation layer can spot a restat
 fact, while `AnalyticalValue.from_fact` folds the amount and source into its `value_id` so two
 contradictory figures are distinct calculation inputs.
 
-Not yet built: `CompanyAdapter` Protocol (M2), `AnalysisBundle` (M5 — deferred until scenarios and
+Not yet built: `CompanyAdapter` Protocol (M2), `AnalysisBundle` (M5, deferred until scenarios and
 validation results are real rather than half-specified).
 
 ## The capital-vintage model
 
-The genuinely novel piece. Capex is split into economic asset classes (land, buildings, power,
+The part with no close equivalent elsewhere. Capex is split into economic asset classes (land,
+buildings, power,
 cooling, servers, GPUs, CPUs, networking, storage, capitalized software, finance leases, CIP), each
 with its own lead time, useful life, utilization ramp, and revenue yield. Per vintage it produces
 service date, depreciation schedule, available capacity, NOPAT, IRR, payback.
 
-Its purpose is inverse: not "what is the return," but **"what utilization, pricing, margin, life,
-and residual-value assumptions must be true for management's claim to hold?"** Keep that framing in
-API names, chart titles, and prose.
+The engine runs the question backwards. It asks **"what utilization, pricing, margin, life, and
+residual-value assumptions must hold for management's claim to be true?"** rather than estimating a
+return directly. Keep that framing in API names, chart titles, and prose.
 
 ## Ingestion rules
 
@@ -169,7 +171,7 @@ global tracer provider at the application level; do not let agents build their o
 **Metadata-only tracing by default.** Store IDs, accession numbers, tool/model names, token counts,
 content hashes, character counts, schema names, confidence, validation status. Do not store full
 prompts, filing text, transcripts, user data, or model reasoning content. GenAI semantic conventions
-are still evolving — pin instrumentation versions, record the convention version, and normalize raw
+are still evolving, so pin instrumentation versions, record the convention version, and normalize raw
 spans into a versioned internal `CanonicalAgentTrace` before analysis. Keep high-cardinality
 financial values out of span attributes; they belong in lineage records.
 
@@ -190,7 +192,7 @@ financial values out of span attributes; they belong in lineage records.
 
 ## Streamlit app constraints
 
-Pages call an `AtlasApplication` service layer and render presenters/components — no analytical
+Pages call an `AtlasApplication` service layer and render presenters/components, with no analytical
 logic in page files, so the front end stays replaceable. Agent runs never trigger on a widget
 rerun; they require an explicit `st.form` submission. Keep four privilege tiers distinct: explore
 validated data (safe), run agent research (explicit, nondeterministic), approve extracted claims
@@ -201,16 +203,15 @@ validated data (safe), run agent research (explicit, nondeterministic), approve 
 
 M0 scaffolding ✔ · M1 schemas + provenance + registry ✔ · M2 SEC ingestion + **Alphabet** adapter +
 reconciliation · M3 metrics · M4 capital-vintage engine · M5 bundle + charts + CLI · M6 Streamlit +
-OTEL · M7 publish v0.1. Then v0.2 Amazon adapter + claim ledger, v0.3 Microsoft and Meta, v0.4
-agents.
+OTEL · M7 publish v0.1. Then v0.2 claim ledger, v0.3 Microsoft and Meta, v0.4 agents, Oracle later.
 
-**Alphabet is the first vertical slice, not Amazon** — a change from the design doc. The author works
-at AWS, and the vintage engine infers exactly the quantities (utilization ramps, useful lives, lead
-times) that job supplies private priors about. Building the methodology against a company he has no
-relationship with, then applying it unchanged to Amazon, is the evidence that nothing was tuned
-around inside knowledge. See `DISCLOSURE.md`. Do not reorder this without reading that file.
+**Amazon and AWS are out of scope permanently.** The design doc opens with an Amazon vertical slice;
+ignore that. The author works at AWS, so the package covers Alphabet, Microsoft, Meta and Oracle
+only. Do not add an Amazon adapter, Amazon examples, or AWS unit-economics content, and do not
+restore the Amazon material from the design doc. `DISCLOSURE.md` states the exclusion publicly and
+explains what it costs; keep the two consistent.
 
-Build the deterministic pipeline before any agentic extraction — agents are only credible once the
+Build the deterministic pipeline before any agentic extraction. Agents are only credible once the
 package can independently reproduce and reconcile reported numbers.
 
 ## Positioning
@@ -221,8 +222,20 @@ package as a Summitward product or name it "Summitward Capex Atlas."
 
 ## Prose conventions
 
-`BACKGROUND_INFORMATION.local.md` is design input, not a spec to quote. When writing READMEs, docs,
-docstrings, or commit messages, state results plainly and avoid AI-slop patterns (puffery,
-significance-inflation, "delve/crucial/robust/seamless/leverage", rule-of-three padding). The
-project's own credibility depends on precise, falsifiable wording about what is known versus
-inferred.
+Treat `BACKGROUND_INFORMATION.local.md` as design input rather than a spec to quote. State results
+plainly in READMEs, docs, docstrings and commit messages; skip puffery, significance-inflation,
+reflexive AI vocabulary, and rule-of-three padding. The project's credibility rests on precise,
+falsifiable wording about what is known versus inferred, so the prose bar is part of the product.
+
+Two linters enforce this, and they overlap on roughly one rule, so both earn their place:
+
+```bash
+./scripts/slopcheck.sh          # both
+./scripts/slopcheck.sh score    # slopscore only, no Node needed
+```
+
+`slopscore` runs in pre-commit and CI; `slopless` runs in CI plus `npm run slop`, kept out of
+pre-commit so editing a docstring does not require a JS toolchain. Both skip `*.local.md`, which is
+quoted journalism and scores terribly for reasons that are not ours to fix. Suppress a genuine false
+positive inline (`<!-- slopscore-disable-next-line RULE -->`,
+`<!-- textlint-disable slopless/rule -->`) rather than by loosening the config.

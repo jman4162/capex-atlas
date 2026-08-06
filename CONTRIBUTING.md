@@ -22,7 +22,7 @@ These are not style preferences. A change that breaks one of them will fail the 
 
 **No uncited constants in the modelling layer.** Every parameter belongs in the assumption registry
 with a declared basis and, where the basis requires it, a citation a reader can check. If you cannot
-cite a value, register it as `user_input` — that is the honest treatment, and it correctly marks
+cite a value, register it as `user_input`. That is the honest treatment, and it correctly marks
 downstream results as scenarios. Do not widen `ALLOWED_NUMBERS` in `assumptions/audit.py` to get a
 number past the check.
 
@@ -45,7 +45,7 @@ constructing an `AnalyticalValue` with a status you chose, you are probably bypa
 1. Vendor golden fixtures from EDGAR (public domain) with hashes; tests must not hit the network.
 2. Cite every accounting-policy constant to a specific note in that company's filing.
 3. Confirm the reconciliation identities pass before adding metrics.
-4. Check the parameter shape matches the existing adapters — the symmetry test will tell you.
+4. Check the parameter shape matches the existing adapters; the symmetry test will tell you.
 
 ## Scope
 

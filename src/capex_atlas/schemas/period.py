@@ -32,7 +32,7 @@ _LABEL = re.compile(
 
 
 class FiscalPeriod(BaseModel):
-    """A company's own fiscal period, not a calendar one.
+    """A fiscal period on the filer's own calendar.
 
     ``fiscal_year``/``fiscal_quarter`` follow the filer's calendar, so Microsoft's
     2026Q2 and Alphabet's 2026Q2 are different spans of real time. ``start`` and

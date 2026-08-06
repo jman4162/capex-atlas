@@ -37,6 +37,23 @@ jobs:
       - name: Tests
         run: uv run pytest --cov --cov-report=term-missing
 
+  prose:
+    # Two linters with near-disjoint rule sets: slopscore covers Markdown and
+    # Python docstrings, slopless covers structural patterns in Markdown.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: uv sync --group dev
+      - run: npm ci
+      - name: slopscore and slopless
+        run: ./scripts/slopcheck.sh
+
   governance:
     # Split out so a failure here reads unambiguously: an uncited constant or an
     # asymmetry between companies, not an ordinary test break.
