@@ -98,10 +98,16 @@ and nothing in `src/` imports the app.
 
 ## Coverage
 
-Alphabet first, then Microsoft and Meta, then Oracle. Amazon and AWS are out of scope, stated up
-front rather than left as a gap for readers to interpret: the author works at AWS, and publishing
-models of an employer's capital returns is a conflict better avoided than managed. `DISCLOSURE.md`
-gives the full reasoning, including what the exclusion costs.
+Alphabet, Microsoft and Meta. Oracle later. Amazon and AWS are out of scope, stated up front
+rather than left as a gap for readers to interpret: the author works at AWS, and publishing models
+of an employer's capital returns is a conflict better avoided than managed. `DISCLOSURE.md` gives
+the full reasoning, including what the exclusion costs.
+
+The three are deliberately unlike each other. Microsoft's fiscal year ends in June, so its 2026Q2
+and Alphabet's cover different months. Meta sells no cloud capacity at all, so there is no segment
+its data-centre spending can be divided into, and capex intensity there is not the measure it is at
+the other two. Those differences are the reason the package models fiscal periods and concept
+vocabularies per filer instead of assuming one shape fits all.
 
 ## Scope and limits
 

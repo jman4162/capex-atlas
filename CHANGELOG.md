@@ -2,6 +2,29 @@
 
 Changes per release, most recent first. Dates are release dates.
 
+## Unreleased
+
+### Fixed
+
+- `verify` never passed the fact scope to its rebuild, so any bundle written with
+  `--facts used` or `--facts period` could never reproduce. The README documented exactly that
+  sequence.
+- `verify` reported a difference with nothing listed when the change sat outside the value diff. It
+  now names the differing sections, and refuses a bundle it did not build rather than comparing
+  different inputs.
+- `reconcile` was registered twice and hardcoded the Alphabet adapter, which would have applied a
+  December year-end to a June filer.
+
+### Added
+
+- Microsoft and Meta adapters, with cited useful-life entries from each 10-K and hash-pinned
+  fixtures. Microsoft's June year-end exercises the fiscal calendar against real filings for the
+  first time.
+- Concept resolution moved behind the adapter, so a filer's tag vocabulary no longer leaks into
+  shared code. Adding a company is now a new module and one registry entry.
+- The cross-company symmetry check now constrains rather than returning early, and allows a
+  filer-specific parameter only when that filer's own filing discloses it.
+
 ## 0.1.0 — 2026-08-06
 
 First release. A deterministic engine that turns SEC filings into source-linked models of capital

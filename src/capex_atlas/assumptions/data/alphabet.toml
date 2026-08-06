@@ -6,14 +6,36 @@
 # the two are separate entries with different bases. That distinction is the
 # whole reason the registry exists.
 
-["useful_life.servers_and_network.googl"]
-description = "Depreciable life of servers and network equipment, as disclosed."
+["useful_life.servers_and_network_range.googl"]
+description = """Disclosed depreciable life of servers and network equipment.
+
+Alphabet gives a single figure where Microsoft and Meta give ranges, so this
+range has zero width. Recorded in the same shape as theirs so the three filers
+can be compared without special-casing one of them."""
+unit = "years"
+basis = "filing_disclosure"
+value = ["6", "6"]
+entity_id = "GOOGL"
+
+["useful_life.servers_and_network_range.googl".citation]
+kind = "sec_filing"
+accession = "0001652044-26-000018"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm"
+section = "Note 1. Summary of Significant Accounting Policies - Property and Equipment"
+quote = "We depreciate servers and network equipment generally over a period of six years."
+
+["useful_life.servers_and_network_point.googl"]
+description = """Single server life used when a schedule needs one number.
+
+Unlike the other two filers, this one is disclosed rather than chosen: Alphabet
+states six years outright, so results computed from it stay reported-grade."""
 unit = "years"
 basis = "filing_disclosure"
 value = "6"
 entity_id = "GOOGL"
 
-["useful_life.servers_and_network.googl".citation]
+["useful_life.servers_and_network_point.googl".citation]
 kind = "sec_filing"
 accession = "0001652044-26-000018"
 form = "10-K"

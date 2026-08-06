@@ -1,0 +1,89 @@
+# Microsoft Corporation accounting-policy parameters.
+#
+# Quoted from Note 1 of the fiscal-2026 Form 10-K (accession 0001193125-26-323660,
+# filed 2026-07-29, year ended 2026-06-30).
+#
+# Note that Microsoft discloses a *range* for servers where Alphabet discloses a
+# single figure. The range is the disclosure; a point inside it is the reader's
+# choice, and the two are separate entries with different bases.
+
+["useful_life.servers_and_network_range.msft"]
+description = """Disclosed range of depreciable lives for servers and network equipment.
+
+Two to six years is a wide range for the asset class that dominates AI capital
+spending. Where in it a given fleet sits is not disclosed."""
+unit = "years"
+basis = "filing_disclosure"
+value = ["2", "6"]
+entity_id = "MSFT"
+
+["useful_life.servers_and_network_range.msft".citation]
+kind = "sec_filing"
+accession = "0001193125-26-323660"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm"
+section = "Note 1. Accounting Policies - Property and Equipment"
+quote = "The estimated useful lives of our property and equipment are generally as follows: software developed or acquired for internal use, three years; servers and network equipment, two to six years; buildings and improvements, five to 15 years."
+
+["useful_life.servers_and_network_point.msft"]
+description = """Single server life used when a schedule needs one number.
+
+Microsoft discloses two to six years and does not say where its fleet sits, so
+this is the reader's assumption and everything computed from it is a scenario.
+Six is chosen only for comparability with Alphabet's disclosed figure."""
+unit = "years"
+basis = "user_input"
+value = "6"
+entity_id = "MSFT"
+
+["useful_life.buildings_range.msft"]
+description = "Disclosed range of depreciable lives for buildings and improvements."
+unit = "years"
+basis = "filing_disclosure"
+value = ["5", "15"]
+entity_id = "MSFT"
+
+["useful_life.buildings_range.msft".citation]
+kind = "sec_filing"
+accession = "0001193125-26-323660"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm"
+section = "Note 1. Accounting Policies - Property and Equipment"
+quote = "buildings and improvements, five to 15 years; leasehold improvements, three to 15 years; and furniture and equipment, one to 10 years. Land is not depreciated."
+
+["useful_life.buildings_point.msft"]
+description = """Single building life used when a schedule needs one number.
+
+Inside the disclosed five-to-15 range; the position within it is the reader's."""
+unit = "years"
+basis = "user_input"
+value = "12"
+entity_id = "MSFT"
+
+["lead_time.technical_infrastructure.msft"]
+description = """Years from cash outlay to assets entering service.
+
+Microsoft does not quantify the lag. The number is the reader's, and everything
+computed from it is a scenario."""
+unit = "years"
+basis = "user_input"
+value = "2"
+entity_id = "MSFT"
+
+["depreciation_start.msft"]
+description = """Whether depreciation begins at purchase or at entry into service.
+
+Zero means it starts when the asset is placed in service, which is what the
+straight-line policy over an asset's useful life implies."""
+unit = "boolean"
+basis = "filing_disclosure"
+value = "0"
+entity_id = "MSFT"
+
+["depreciation_start.msft".citation]
+kind = "sec_filing"
+accession = "0001193125-26-323660"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm"
+section = "Note 1. Accounting Policies - Property and Equipment"
+quote = "Property and equipment is stated at cost less accumulated depreciation and depreciated using the straight-line method over the shorter of the estimated useful life of the asset or the lease term."

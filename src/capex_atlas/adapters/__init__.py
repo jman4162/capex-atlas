@@ -17,9 +17,13 @@ from capex_atlas.adapters.base import (
     resolve_series,
     resolve_value_series,
 )
+from capex_atlas.adapters.meta import MetaAdapter
+from capex_atlas.adapters.microsoft import MicrosoftAdapter
 
 ADAPTERS: dict[str, CompanyAdapter] = {
     AlphabetAdapter.entity_id: AlphabetAdapter(),
+    MicrosoftAdapter.entity_id: MicrosoftAdapter(),
+    MetaAdapter.entity_id: MetaAdapter(),
 }
 
 
@@ -45,6 +49,8 @@ __all__ = [
     "Availability",
     "CapitalCategory",
     "CompanyAdapter",
+    "MetaAdapter",
+    "MicrosoftAdapter",
     "SegmentSupport",
     "UnsupportedEntityError",
     "adapter_for",

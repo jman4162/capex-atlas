@@ -7,5 +7,21 @@
     "retrieved": "2026-08-06",
     "license": "public domain (SEC EDGAR)",
     "trimmed": "us-gaap only; 20 concepts; periods ending on or after 2023-01-01"
+  },
+  "meta_companyfacts_trimmed.json": {
+    "sha256": "531a1fbfba9e34b4adea6cd7ccc2b053d2d5058c82df7b1ccc927577df93eff8",
+    "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
+    "entity": "Meta Platforms, Inc.",
+    "cik": 1326801,
+    "license": "public domain (SEC EDGAR)",
+    "trimmed": "us-gaap only; 19 concepts the META adapter references; periods ending on or after 2023-01-01"
+  },
+  "msft_companyfacts_trimmed.json": {
+    "sha256": "12aba266bbfdcc9b95dd914870bc6c599ece65b90bc32612e62319b7426c4ff5",
+    "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+    "entity": "MICROSOFT CORPORATION",
+    "cik": 789019,
+    "license": "public domain (SEC EDGAR)",
+    "trimmed": "us-gaap only; 18 concepts the MSFT adapter references; periods ending on or after 2023-01-01"
   }
 }

@@ -1,0 +1,108 @@
+# Meta Platforms accounting-policy parameters.
+#
+# Quoted from Note 1 of the fiscal-2025 Form 10-K (accession 0001628280-26-003942,
+# filed 2026-01-29, year ended 2025-12-31).
+#
+# Meta carries the clearest useful-life change in the group: it extended most
+# servers and network assets to 5.5 years effective January 2025 and quantified
+# the effect on depreciation and net income. That is the depreciation-lag lesson
+# with the company's own numbers attached, and it is why the extension is its own
+# registry entry rather than a footnote.
+
+["useful_life.servers_and_network_range.meta"]
+description = """Disclosed range of depreciable lives for servers and network assets.
+
+Narrow, because Meta extended most of the fleet to the top of the range in
+January 2025; see useful_life.servers_and_network_extension.meta."""
+unit = "years"
+basis = "filing_disclosure"
+value = ["5", "5.5"]
+entity_id = "META"
+
+["useful_life.servers_and_network_range.meta".citation]
+kind = "sec_filing"
+accession = "0001628280-26-003942"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm"
+section = "Note 1. Summary of Significant Accounting Policies - Property and Equipment"
+quote = "The estimated useful lives of property and equipment and amortization periods of finance lease right-of-use (ROU) assets as of December 31, 2025 are described below: Servers and network assets Five to 5.5 years; Buildings 25 to 30 years."
+
+["useful_life.servers_and_network_point.meta"]
+description = """Single server life used when a schedule needs one number.
+
+Five and a half is the extended life Meta applied to most of the fleet, but
+"most" is not "all", so a single figure remains the reader's choice."""
+unit = "years"
+basis = "user_input"
+value = "5.5"
+entity_id = "META"
+
+["useful_life.servers_and_network_extension.meta"]
+description = """Reduction in annual depreciation expense from the January 2025 life extension.
+
+Disclosed in dollars, which is rare and useful: it puts a number on how much of
+a reported margin improvement came from an accounting estimate rather than from
+operations. A reader comparing Meta's depreciation growth across that boundary
+without this figure is comparing two different policies."""
+unit = "USD"
+basis = "filing_disclosure"
+value = "2920000000"
+entity_id = "META"
+
+["useful_life.servers_and_network_extension.meta".citation]
+kind = "sec_filing"
+accession = "0001628280-26-003942"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm"
+section = "Note 1. Summary of Significant Accounting Policies - Use of Estimates"
+quote = "In January 2025, we completed an assessment of the useful lives of property and equipment, which resulted in an increase in the estimated useful lives of most servers and network assets to 5.5 years, effective January 1, 2025. Based on the servers and network assets placed in service as of December 31, 2024, the financial impact of this change in estimate included a reduction in depreciation expense of $2.92 billion and an increase in net income of $2.59 billion."
+
+["useful_life.buildings_range.meta"]
+description = "Disclosed range of depreciable lives for buildings."
+unit = "years"
+basis = "filing_disclosure"
+value = ["25", "30"]
+entity_id = "META"
+
+["useful_life.buildings_range.meta".citation]
+kind = "sec_filing"
+accession = "0001628280-26-003942"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm"
+section = "Note 1. Summary of Significant Accounting Policies - Property and Equipment"
+quote = "Servers and network assets Five to 5.5 years; Buildings 25 to 30 years; Equipment and other One to 25 years; Finance lease right-of-use assets Five to 20 years."
+
+["useful_life.buildings_point.meta"]
+description = "Single building life used when a schedule needs one number, inside the disclosed range."
+unit = "years"
+basis = "user_input"
+value = "27"
+entity_id = "META"
+
+["lead_time.technical_infrastructure.meta"]
+description = """Years from cash outlay to assets entering service.
+
+Meta says construction-in-progress assets are not depreciated until placed in
+service but does not quantify the interval, so the number is the reader's."""
+unit = "years"
+basis = "user_input"
+value = "2"
+entity_id = "META"
+
+["depreciation_start.meta"]
+description = """Whether depreciation begins at purchase or at entry into service.
+
+Zero means it starts on entry into service, stated directly for construction in
+progress."""
+unit = "boolean"
+basis = "filing_disclosure"
+value = "0"
+entity_id = "META"
+
+["depreciation_start.meta".citation]
+kind = "sec_filing"
+accession = "0001628280-26-003942"
+form = "10-K"
+url = "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm"
+section = "Note 1. Summary of Significant Accounting Policies - Property and Equipment"
+quote = "Land and assets held within construction in progress (CIP) are not depreciated. CIP assets are related to the construction or development of property and equipment that have not yet been placed in service for their intended use."
