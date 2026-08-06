@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Lets a run be restarted without an empty commit. GitHub cancelled a whole run
+  # on 2026-08-06 after fifteen minutes with no runner assigned, and without this
+  # trigger the only way back to a green main was to push something.
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
