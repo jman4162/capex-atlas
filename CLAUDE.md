@@ -213,17 +213,21 @@ validated data (safe), run agent research (explicit, nondeterministic), approve 
 
 ## Build order
 
-M0 scaffolding ✔ · M1 schemas + provenance + registry ✔ · M2 SEC ingestion + Alphabet adapter +
-reconciliation ✔ · M3 metrics ✔ · M4 capital-vintage engine ✔ · M5 bundle + charts + CLI ✔ ·
-M6 Streamlit + OTEL ✔ · **M7 publish v0.1** ← next. Then v0.2 claim ledger, v0.3 Microsoft and Meta,
-v0.4 agents, Oracle later.
+M0 through M7 are complete and v0.1.0 is tagged. Next: **v0.2 claim ledger**, then v0.3 Microsoft
+and Meta, v0.4 agents, Oracle later.
 
-Known gaps carried into M7: segment data needs the XBRL instance rather than Company Facts (the
-adapter reports this rather than returning an empty list); `roic_rd_capitalized` still takes a
-pre-computed R&D asset and amortization, which the vintage engine could now supply but does not; a
-bundle carries the filer's whole extracted history, which is most of its bytes, so a
-`--facts used|period|all` switch is wanted; the CLI cannot yet attach a scenario to a bundle even
-though the model supports it; and no example bundle is committed, which M7 needs.
+Known limits, all recorded in CHANGELOG.md rather than only here: segment figures need the XBRL
+instance rather than Company Facts (the adapter says so instead of returning an empty list);
+`roic_rd_capitalized` takes a pre-computed research asset and amortization that the vintage engine
+could supply but does not; only Alphabet has an adapter; and the package is not on PyPI, which is a
+decision to make rather than an oversight.
+
+## The example bundle
+
+`examples/googl-2025fy` is built from the hash-pinned test fixture by `scripts/build_example.py`, so
+it regenerates offline to the same content. After changing anything that affects output, rebuild it
+and commit the result; `tests/golden/test_example_bundle.py` compares content (not bytes, since the
+provenance block is volatile by design) and fails if the committed copy has drifted.
 
 ## Front end
 

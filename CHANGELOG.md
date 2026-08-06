@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes per release. Dates are the release date.
+Changes per release, most recent first. Dates are release dates.
 
 ## 0.1.0 — 2026-08-06
 
