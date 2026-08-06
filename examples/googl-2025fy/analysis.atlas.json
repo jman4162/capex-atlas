@@ -285,7 +285,60 @@
       "unit": "USD"
     }
   ],
-  "charts": [],
+  "charts": [
+    {
+      "annotations": [],
+      "chart_type": "known_vs_inferred",
+      "data_ref": "evidence_mix",
+      "methodology_note": "A calculation is never itself reported, however solid its inputs, so nothing here can sit in the leftmost bar.",
+      "source_ids": [],
+      "subtitle": "Every published figure, by how much weight it carries",
+      "title": "GOOGL: how much of this analysis is measured",
+      "unit": "figures",
+      "value_status_field": "status",
+      "x_field": "status",
+      "y_fields": [
+        "count"
+      ]
+    },
+    {
+      "annotations": [],
+      "chart_type": "capex_composition_timeline",
+      "data_ref": "capex_vs_depreciation",
+      "methodology_note": "Cash leaves when capital is bought; depreciation starts when it enters service. The gap between the two lines is that lag.",
+      "source_ids": [],
+      "subtitle": "Annual periods only",
+      "title": "GOOGL: capital spending against depreciation",
+      "unit": "USD",
+      "value_status_field": "status",
+      "x_field": "period",
+      "y_fields": [
+        "capex",
+        "depreciation"
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "source_id": null,
+          "text": "capital committed",
+          "x": "0"
+        }
+      ],
+      "chart_type": "spend_to_service_timeline",
+      "data_ref": "vintage_cash_flow",
+      "methodology_note": "Every point is a scenario; nothing here is measured.",
+      "source_ids": [],
+      "subtitle": "Illustrative assumptions, not an estimate of any company's returns",
+      "title": "GOOGL: modelled cash profile of one capital vintage",
+      "unit": "USD",
+      "value_status_field": "status",
+      "x_field": "year",
+      "y_fields": [
+        "free_cash_flow"
+      ]
+    }
+  ],
   "claims": [],
   "disclaimer": "Educational tool. Not investment, legal, tax or accounting advice. No warranty of accuracy. Verify against the cited filings.",
   "entity_id": "GOOGL",
@@ -950,7 +1003,7 @@
   "period_label": "2025FY",
   "provenance": {
     "command": "python scripts/build_example.py",
-    "created_at": "2026-08-06T07:01:12.644485Z",
+    "created_at": "2026-08-06T14:24:39.267670Z",
     "package_version": "0.1.0",
     "schema_version": "1"
   },

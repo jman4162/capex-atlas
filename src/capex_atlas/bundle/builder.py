@@ -23,6 +23,7 @@ from capex_atlas.adapters import adapter_for
 from capex_atlas.adapters.base import concrete_concepts, resolve_value_series
 from capex_atlas.assumptions.models import Assumption
 from capex_atlas.assumptions.registry import AssumptionRegistry
+from capex_atlas.bundle.charts import build_specs
 from capex_atlas.bundle.model import AnalysisBundle, BundleProvenance
 from capex_atlas.metrics import (
     capex_intensity,
@@ -156,6 +157,7 @@ def build_analysis(
         facts=used_facts,
         values=tuple(results),
         scenarios=tuple(scenarios),
+        charts=build_specs(results, used_facts, entity_id=entity_id, has_scenario=bool(scenarios)),
         calculations=tuple(
             sorted(
                 {

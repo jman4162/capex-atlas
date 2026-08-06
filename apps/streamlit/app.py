@@ -109,6 +109,9 @@ def _render(page: str, app: AtlasApplication) -> None:
 def _overview(app: AtlasApplication) -> None:
     st.title(f"{app.bundle.entity_id} · {app.bundle.period_label}")
     status_legend(app.evidence_mix())
+    mix = app.figure("evidence_mix")
+    if mix is not None:
+        st.plotly_chart(mix, use_container_width=True)
     cards = app.overview()
     for row in range(0, len(cards), 3):
         for column, card in zip(st.columns(3), cards[row : row + 3], strict=False):
@@ -127,22 +130,15 @@ def _capital(app: AtlasApplication) -> None:
         if card:
             metric_card(card)
 
-    concept = st.selectbox("Series", app.concepts(), index=None, placeholder="Pick a concept")
-    if concept:
-        points = app.series(concept, kind="FY")
-        if points:
-            st.bar_chart(
-                {"value": [float(point.value) for point in points]},
-                x_label="fiscal year",
-                y_label=concept,
-            )
-            st.caption(
-                "Annual periods only. Mixing quarters with year-to-date figures on one "
-                "axis produces a sawtooth that looks like a business collapsing four "
-                "times a year."
-            )
-        else:
-            st.info(f"No annual periods tagged for {concept}.")
+    figure = app.figure("capex_vs_depreciation")
+    if figure is not None:
+        st.plotly_chart(figure, use_container_width=True)
+        st.caption(
+            "Annual periods only. Mixing quarters with year-to-date figures on one axis "
+            "produces a sawtooth that looks like a business collapsing four times a year."
+        )
+    else:
+        st.info("This bundle carries no annual history to chart.")
 
 
 def _returns(app: AtlasApplication) -> None:
@@ -239,7 +235,7 @@ def _simulator(app: AtlasApplication) -> None:
         st.write(f"**{band.lever}** ({band.low_input} to {band.high_input}) moves value by {swing}")
 
     st.subheader("Cash flow by year")
-    st.bar_chart({"free cash flow": [float(y.free_cash_flow) for y in result.schedule.years]})
+    st.plotly_chart(app.scenario_figure(result), use_container_width=True)
 
 
 def _provenance(app: AtlasApplication) -> None:

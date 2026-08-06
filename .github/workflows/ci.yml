@@ -45,6 +45,15 @@ jobs:
         # fail on the provenance block, which is volatile by design.
         run: uv run capex-atlas audit examples/googl-2025fy
 
+      - name: README figures are current
+        # These are byte-deterministic by construction, so unlike the bundle they
+        # can be compared directly. A committed figure that disagrees with the
+        # code is worse than no figure.
+        run: |
+          uv run python scripts/generate_readme_figures.py
+          git diff --exit-code -- docs/_static/ \
+            || (echo "docs/_static is stale; run scripts/generate_readme_figures.py" && exit 1)
+
   prose:
     # Two linters with near-disjoint rule sets: slopscore covers Markdown and
     # Python docstrings, slopless covers structural patterns in Markdown.

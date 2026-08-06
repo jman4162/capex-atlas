@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict
 
 from capex_atlas.bundle.audit import AuditReport, audit_bundle
 from capex_atlas.bundle.builder import build_analysis
+from capex_atlas.bundle.charts import chart_data, vintage_cash_flow_spec
 from capex_atlas.bundle.diff import BundleDiff, diff_bundles
 from capex_atlas.bundle.io import read_bundle
 from capex_atlas.bundle.model import AnalysisBundle
@@ -29,9 +30,11 @@ from capex_atlas.obs import tracing
 from capex_atlas.scenarios.model import ScenarioDefinition, ScenarioResult
 from capex_atlas.scenarios.run import run_scenario
 from capex_atlas.schemas.calculation import CalculationNode
+from capex_atlas.schemas.charts import ChartSpec
 from capex_atlas.schemas.evidence import EvidenceStatus
 from capex_atlas.schemas.source import SourceKind, SourceReference
 from capex_atlas.schemas.values import AnalyticalValue
+from capex_atlas.viz.render import render
 
 
 class MetricCard(BaseModel):
@@ -220,6 +223,44 @@ class AtlasApplication:
 
     def concepts(self) -> list[str]:
         return sorted({fact.metric_id for fact in self.bundle.facts})
+
+    # ----------------------------------------------------------------- charts
+
+    def charts(self) -> tuple[ChartSpec, ...]:
+        """The chart specifications this bundle carries."""
+        return self.bundle.charts
+
+    def scenario_figure(self, result: ScenarioResult) -> dict[str, Any]:
+        """Render a freshly run scenario through the grammar the bundle uses.
+
+        Exists so a page never builds a chart specification of its own; the
+        front end asks for a figure and renders it.
+        """
+        spec = vintage_cash_flow_spec(self.bundle.entity_id)
+        return render(spec, chart_data(spec, values=(), facts=(), scenario=result))
+
+    def figure(self, data_ref: str, *, scenario_index: int = 0) -> dict[str, Any] | None:
+        """Render one of the bundle's charts to a Plotly figure dictionary.
+
+        Goes through the chart grammar rather than handing raw numbers to a
+        plotting call, so each mark inherits the evidence status of the value it
+        draws. A chart that renders a scenario the same way it renders a reported
+        figure has undone the work every layer beneath it did.
+        """
+        spec = next((item for item in self.bundle.charts if item.data_ref == data_ref), None)
+        if spec is None:
+            return None
+        scenario = (
+            self.bundle.scenarios[scenario_index]
+            if len(self.bundle.scenarios) > scenario_index
+            else None
+        )
+        data = chart_data(
+            spec, values=self.bundle.values, facts=self.bundle.facts, scenario=scenario
+        )
+        if not data or not data.get(spec.x_field):
+            return None
+        return render(spec, data)
 
     # -------------------------------------------------------------- scenarios
 

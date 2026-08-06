@@ -92,3 +92,42 @@ def test_the_example_reconciles(committed):  # type: ignore[no-untyped-def]
     assert committed.validation is not None
     assert committed.validation.passed
     assert committed.validation.verified_count > 0
+
+
+class TestTheExampleCarriesItsCharts:
+    """The chart grammar had no caller for a whole release. It has one now."""
+
+    def test_specs_are_attached(self, committed):  # type: ignore[no-untyped-def]
+        refs = {spec.data_ref for spec in committed.charts}
+        assert {"evidence_mix", "capex_vs_depreciation", "vintage_cash_flow"} <= refs
+
+    def test_every_spec_names_its_status_column(self, committed):  # type: ignore[no-untyped-def]
+        # Without it a renderer cannot tell a scenario from a measurement.
+        for spec in committed.charts:
+            assert spec.value_status_field, spec.data_ref
+
+    def test_every_spec_renders(self, committed):  # type: ignore[no-untyped-def]
+        from capex_atlas.application import AtlasApplication
+
+        app = AtlasApplication(committed)
+        for spec in committed.charts:
+            assert app.figure(spec.data_ref) is not None, spec.data_ref
+
+    def test_the_committed_figures_match_the_bundle(self, committed):  # type: ignore[no-untyped-def]
+        import sys
+
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        import generate_readme_figures as figures
+
+        from capex_atlas.application import AtlasApplication
+        from capex_atlas.viz.svg import render_svg
+
+        app = AtlasApplication(committed)
+        for data_ref, filename in figures.FIGURES.items():
+            path = REPO_ROOT / "docs" / "_static" / filename
+            assert path.exists(), f"{filename} is missing; run generate_readme_figures.py"
+            expected = render_svg(app.figure(data_ref))
+            assert path.read_text() == expected, (
+                f"{filename} has drifted from the bundle. "
+                "Regenerate: uv run python scripts/generate_readme_figures.py"
+            )

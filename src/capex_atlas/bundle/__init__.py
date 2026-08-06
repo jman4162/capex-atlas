@@ -3,6 +3,7 @@
 from capex_atlas.adapters import UnsupportedEntityError
 from capex_atlas.bundle.audit import AuditFinding, AuditReport, Severity, audit_bundle
 from capex_atlas.bundle.builder import FactScope, build_analysis, headline_table
+from capex_atlas.bundle.charts import build_specs, chart_data
 from capex_atlas.bundle.diff import BundleDiff, Change, ChangeKind, diff_bundles
 from capex_atlas.bundle.io import (
     BUNDLE_FILE,
@@ -27,7 +28,9 @@ __all__ = [
     "UnsupportedEntityError",
     "audit_bundle",
     "build_analysis",
+    "build_specs",
     "canonical_json",
+    "chart_data",
     "content_only",
     "diff_bundles",
     "headline_table",

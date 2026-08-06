@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="460" viewBox="0 0 900 460" font-family="Helvetica, Arial, sans-serif">
+<defs><pattern id="hatch-estimated" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#ffffff" stroke-width="2.4"/></pattern><pattern id="hatch-scenario" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0,0 l7,7 M7,0 l-7,7" stroke="#ffffff" stroke-width="1.6"/></pattern></defs>
+<rect width="900" height="460" fill="#ffffff"/>
+<text x="96" y="34" font-size="19" fill="#333333" font-weight="600">GOOGL: capital spending against depreciation</text>
+<text x="96" y="56" font-size="13" fill="#666666">Annual periods only</text>
+<line x1="96" y1="342.0" x2="872" y2="342.0" stroke="#e3e3e3" stroke-width="1"/>
+<text x="86" y="346.0" font-size="11" fill="#666666" text-anchor="end">0</text>
+<line x1="96" y1="276.0" x2="872" y2="276.0" stroke="#e3e3e3" stroke-width="1"/>
+<text x="86" y="280.0" font-size="11" fill="#666666" text-anchor="end">22.9B</text>
+<line x1="96" y1="210.0" x2="872" y2="210.0" stroke="#e3e3e3" stroke-width="1"/>
+<text x="86" y="214.0" font-size="11" fill="#666666" text-anchor="end">45.7B</text>
+<line x1="96" y1="144.0" x2="872" y2="144.0" stroke="#e3e3e3" stroke-width="1"/>
+<text x="86" y="148.0" font-size="11" fill="#666666" text-anchor="end">68.6B</text>
+<line x1="96" y1="78.0" x2="872" y2="78.0" stroke="#e3e3e3" stroke-width="1"/>
+<text x="86" y="82.0" font-size="11" fill="#666666" text-anchor="end">91.4B</text>
+<line x1="96" y1="342.0" x2="872" y2="342.0" stroke="#333333" stroke-width="1.4"/>
+<rect x="410.0" y="78.0" width="74.0" height="264.0" fill="#2f5d8a" opacity="1.00"/>
+<rect x="484.0" y="281.0" width="74.0" height="61.0" fill="#c2724a" opacity="1.00"/>
+<text x="484.0" y="362" font-size="12" fill="#333333" text-anchor="middle">2025FY</text>
+<rect x="96" y="377" width="11" height="11" fill="#2f5d8a"/>
+<text x="113" y="386" font-size="12" fill="#333333">capex</text>
+<rect x="153" y="377" width="11" height="11" fill="#c2724a"/>
+<text x="170" y="386" font-size="12" fill="#333333">depreciation</text>
+<text x="96" y="420" font-size="10.5" fill="#666666">● reported | Cash leaves when capital is bought; depreciation starts when it enters service. The gap between the two</text>
+<text x="96" y="434" font-size="10.5" fill="#666666">lines is that lag. | Educational tool. Not investment, legal, tax or accounting advice. No warranty of accuracy.</text>
+<text x="96" y="448" font-size="10.5" fill="#666666">Verify against the cited filings.</text>
+</svg>
