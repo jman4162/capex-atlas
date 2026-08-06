@@ -1,0 +1,34 @@
+# Assumptions that are not specific to any filer.
+#
+# Company-specific entries (useful lives, asset mix, lead times) are added
+# alongside each adapter, and must cite that filer's own accounting-policy
+# disclosure. Nothing in this file may be a number an author simply believes.
+
+["tax.us_federal_statutory_rate"]
+description = "US federal statutory corporate income tax rate, used where an effective rate is not being modelled explicitly."
+unit = "ratio"
+basis = "published_third_party"
+value = "0.21"
+
+["tax.us_federal_statutory_rate".citation]
+kind = "statute"
+url = "https://www.law.cornell.edu/uscode/text/26/11"
+section = "26 U.S.C. Sec. 11(b)"
+quote = "The amount of the tax imposed by subsection (a) shall be 21 percent of taxable income."
+
+["discount.required_return"]
+description = "Required return used to discount vintage cash flows. There is no publicly correct value; the reader chooses it and owns the consequence."
+unit = "ratio"
+basis = "user_input"
+value = "0.09"
+
+["vintage.utilization_ramp.illustrative"]
+description = """Illustrative multi-year utilization ramp for a capacity vintage.
+
+Deliberately not derived from any company's operating data. No hyperscaler
+discloses a utilization curve, so any specific ramp is a choice by whoever runs
+the model -- which is why this is user_input and why every figure computed from
+it is marked as a scenario rather than an estimate."""
+unit = "ratio"
+basis = "user_input"
+value = ["0.35", "0.60", "0.78", "0.85"]

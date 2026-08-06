@@ -1,0 +1,34 @@
+# Local design notes and anything else marked local
+*.local.md
+
+# Local data store: raw filings, parquet facts, duckdb.
+# Root-anchored: src/capex_atlas/assumptions/data/ holds the registry and must be tracked.
+/data/
+
+# Analysis work files (checked-in examples live in examples/)
+*.atlas
+*.atlas.json
+!examples/**/*.atlas.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
