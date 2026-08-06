@@ -13,13 +13,14 @@ with a citation.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict
 
 from capex_atlas.normalization.calendar import FiscalCalendar
-from capex_atlas.schemas.facts import Statement
+from capex_atlas.schemas.facts import FinancialFact, Statement
 
 
 class CapitalCategory(StrEnum):
@@ -66,6 +67,32 @@ class SegmentSupport(BaseModel):
     known_segments: tuple[str, ...] = ()
 
 
+def resolve_series(
+    facts: Sequence[FinancialFact], concepts: Sequence[str]
+) -> dict[str, FinancialFact]:
+    """Stitch one economic series together across the tags a filer has used.
+
+    Filers migrate XBRL concepts. Alphabet reported revenue under
+    ``RevenueFromContractWithCustomerExcludingAssessedTax`` and then switched to
+    ``Revenues``, so either tag alone gives a history that stops or starts
+    mid-stream, and a chart built on it shows a cliff that never happened.
+
+    *concepts* is in precedence order, most current first. Where a period has
+    facts under more than one tag, the earliest-listed wins.
+    """
+    priority = {concept: rank for rank, concept in enumerate(concepts)}
+    chosen: dict[str, tuple[int, FinancialFact]] = {}
+    for fact in facts:
+        rank = priority.get(fact.metric_id)
+        if rank is None:
+            continue
+        label = fact.period.label
+        incumbent = chosen.get(label)
+        if incumbent is None or rank < incumbent[0]:
+            chosen[label] = (rank, fact)
+    return {label: fact for label, (_, fact) in chosen.items()}
+
+
 @runtime_checkable
 class CompanyAdapter(Protocol):
     """Structural knowledge about one filer."""
@@ -81,6 +108,10 @@ class CompanyAdapter(Protocol):
 
     def capex_concepts(self) -> tuple[str, ...]:
         """Concepts that together make up cash capital expenditure."""
+        ...
+
+    def concept_aliases(self) -> dict[str, tuple[str, ...]]:
+        """Canonical series names to the tags this filer has used, current first."""
         ...
 
     def segment_support(self, source: str) -> SegmentSupport:

@@ -3,9 +3,15 @@
 Turn public filings into reproducible, source-linked models of hyperscaler capital deployment,
 cash flow, capacity economics, and returns on invested capital.
 
-> **Status: pre-release (v0.1 in progress).** The schemas, provenance kernel and assumption registry
-> are in place. Ingestion, metrics, the capital-vintage engine and the Streamlit app are not yet
-> built. Nothing here produces analysis of a real company today.
+> **Status: pre-release (v0.1 in progress).** Schemas, the provenance kernel, the assumption
+> registry, SEC ingestion and the metric suite are in place. The capital-vintage engine, the analysis
+> bundle and the Streamlit app are not.
+
+> **Not advice.** Capex Atlas is educational software. It is **not investment, legal, tax or
+> accounting advice**, carries **no warranty of accuracy or completeness**, and its authors accept
+> **no liability** for any loss arising from its use. It publishes no ratings, price targets or
+> recommendations. Verify every figure against the filings it cites. Read
+> [DISCLAIMER.md](DISCLAIMER.md) before relying on anything here.
 
 ## What it is
 

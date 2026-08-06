@@ -19,7 +19,21 @@ import pytest
 
 from capex_atlas.accounting.reconciliation import CheckStatus, reconcile
 from capex_atlas.adapters.alphabet import AlphabetAdapter
+from capex_atlas.adapters.base import resolve_series
+from capex_atlas.assumptions.registry import AssumptionRegistry
+from capex_atlas.metrics import (
+    capex_to_depreciation,
+    invested_capital_ex_cash,
+    invested_capital_operating,
+    lease_adjusted_fcf,
+    nopat,
+    reported_fcf,
+    roic,
+    standardized_fcf,
+)
 from capex_atlas.normalization.quarters import discrete_quarter
+from capex_atlas.provenance.graph import calculation_graph
+from capex_atlas.schemas.evidence import EvidenceStatus
 from capex_atlas.schemas.period import FiscalPeriod
 from capex_atlas.schemas.source import SourceKind, SourceReference
 from capex_atlas.schemas.values import AnalyticalValue
@@ -145,3 +159,121 @@ class TestAdapter:
         # Finance-lease additions are capital deployment but not cash capex.
         # Combining them is a named choice made in the metrics layer.
         assert "FinanceLeaseLiability" not in AlphabetAdapter().capex_concepts()
+
+
+class TestMetricsOnRealData:
+    """Metrics over the pinned fixture.
+
+    These assertions check that the pipeline computes what the filings imply.
+    They are not published analysis of Alphabet, and the figures carry the
+    disclaimer that applies to everything this package produces.
+    """
+
+    @pytest.fixture
+    def values(self, extraction):  # type: ignore[no-untyped-def]
+        indexed = {
+            (f.metric_id, f.period.label): AnalyticalValue.from_fact(f) for f in extraction.facts
+        }
+        revenue = {
+            label: AnalyticalValue.from_fact(fact)
+            for label, fact in resolve_series(
+                extraction.facts, AlphabetAdapter().concept_aliases()["revenue.total"]
+            ).items()
+        }
+        return indexed, revenue
+
+    def test_revenue_series_spans_the_tag_migration(self, values):  # type: ignore[no-untyped-def]
+        # Alphabet moved from RevenueFromContractWithCustomer... to Revenues
+        # after 2025Q1. Either tag alone leaves a hole in the history.
+        _, revenue = values
+        annual = {label for label in revenue if label.endswith("FY")}
+        assert {"2023FY", "2024FY", "2025FY"} <= annual
+
+    def test_free_cash_flow_variants_differ_by_the_lease_payments(self, values):  # type: ignore[no-untyped-def]
+        indexed, _ = values
+        cfo = indexed[(CFO, "2025FY")]
+        capex = indexed[(CAPEX, "2025FY")]
+        leases = indexed[("FinanceLeasePrincipalPayments", "2025FY")]
+        plain = reported_fcf(cfo, capex)
+        adjusted = lease_adjusted_fcf(cfo, capex, leases)
+        assert plain.value == Decimal("73266000000")
+        assert adjusted.value == Decimal("71278000000")
+        assert plain.value - adjusted.value == leases.value
+
+    def test_untagged_input_yields_unresolved_rather_than_a_wrong_number(self, values):  # type: ignore[no-untyped-def]
+        # Alphabet does not tag proceeds from equipment disposals in this
+        # period, so the standardized definition cannot be computed. It must
+        # come back unknown instead of silently treating the gap as zero.
+        indexed, _ = values
+        result = standardized_fcf(
+            indexed[(CFO, "2025FY")],
+            indexed[(CAPEX, "2025FY")],
+            indexed.get(("ProceedsFromSaleOfPropertyPlantAndEquipment", "2025FY")),
+            indexed[("FinanceLeasePrincipalPayments", "2025FY")],
+        )
+        assert result.value is None
+        assert result.status is EvidenceStatus.UNRESOLVED
+
+    def test_capex_runs_well_above_depreciation(self, values):  # type: ignore[no-untyped-def]
+        indexed, _ = values
+        ratio = capex_to_depreciation(
+            indexed[(CAPEX, "2025FY")], indexed[("Depreciation", "2025FY")]
+        )
+        assert ratio.value is not None
+        assert ratio.value > Decimal("4")
+        assert ratio.status is EvidenceStatus.DERIVED
+
+    def test_statutory_tax_rate_makes_returns_estimated_not_derived(self, values):  # type: ignore[no-untyped-def]
+        indexed, _ = values
+        rate = AssumptionRegistry.load().get("tax.us_federal_statutory_rate")
+        profit = nopat(indexed[("OperatingIncomeLoss", "2025FY")], rate)
+        capital = invested_capital_operating(
+            indexed[("Assets", "2025@4")], indexed[("LiabilitiesCurrent", "2025@4")]
+        )
+        result = roic(profit, capital)
+        assert capital.status is EvidenceStatus.DERIVED
+        assert result.status is EvidenceStatus.ESTIMATED
+
+    def test_a_return_ratio_takes_the_period_of_its_flow(self, values):  # type: ignore[no-untyped-def]
+        # NOPAT spans a year, invested capital is measured at a date. The ratio
+        # describes the year.
+        indexed, _ = values
+        rate = AssumptionRegistry.load().get("tax.us_federal_statutory_rate")
+        result = roic(
+            nopat(indexed[("OperatingIncomeLoss", "2025FY")], rate),
+            invested_capital_operating(
+                indexed[("Assets", "2025@4")], indexed[("LiabilitiesCurrent", "2025@4")]
+            ),
+        )
+        assert result.period is not None
+        assert result.period.label == "2025FY"
+
+    def test_the_two_capital_bases_give_materially_different_returns(self, values):  # type: ignore[no-untyped-def]
+        # Several percentage points apart, which is why the package names both
+        # rather than picking one and calling it "ROIC".
+        indexed, _ = values
+        rate = AssumptionRegistry.load().get("tax.us_federal_statutory_rate")
+        profit = nopat(indexed[("OperatingIncomeLoss", "2025FY")], rate)
+        including_cash = roic(
+            profit,
+            invested_capital_operating(
+                indexed[("Assets", "2025@4")], indexed[("LiabilitiesCurrent", "2025@4")]
+            ),
+        )
+        excluding_cash = roic(
+            profit,
+            invested_capital_ex_cash(
+                indexed[("Assets", "2025@4")],
+                indexed[("LiabilitiesCurrent", "2025@4")],
+                indexed[("CashAndCashEquivalentsAtCarryingValue", "2025@4")],
+                indexed[("MarketableSecuritiesCurrent", "2025@4")],
+            ),
+        )
+        assert including_cash.value is not None and excluding_cash.value is not None
+        assert excluding_cash.value - including_cash.value > Decimal("0.05")
+
+    def test_every_metric_result_traces_to_the_filing(self, values):  # type: ignore[no-untyped-def]
+        indexed, _ = values
+        with calculation_graph() as graph:
+            result = reported_fcf(indexed[(CFO, "2025FY")], indexed[(CAPEX, "2025FY")])
+        assert graph.leaf_source_ids(result.value_id)

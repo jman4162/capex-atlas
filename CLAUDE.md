@@ -202,15 +202,22 @@ validated data (safe), run agent research (explicit, nondeterministic), approve 
 ## Build order
 
 M0 scaffolding ✔ · M1 schemas + provenance + registry ✔ · M2 SEC ingestion + Alphabet adapter +
-reconciliation ✔ · **M3 metrics** ← next · M4 capital-vintage engine · M5 bundle + charts + CLI ·
+reconciliation ✔ · M3 metrics ✔ · **M4 capital-vintage engine** ← next · M5 bundle + charts + CLI ·
 M6 Streamlit + OTEL · M7 publish v0.1. Then v0.2 claim ledger, v0.3 Microsoft and Meta, v0.4 agents,
 Oracle later.
 
-Known gaps carried out of M2: segment data needs the XBRL instance rather than Company Facts (the
+Known gaps carried into M4: segment data needs the XBRL instance rather than Company Facts (the
 adapter reports this rather than returning an empty list); no company-specific assumptions are in
 the registry yet, since useful lives live in accounting-policy notes that still have to be read and
-quoted; and `Decimal` division has no rounding or display policy, which M3 should settle before a
-metric suite exists to retrofit.
+quoted, and M4 needs them; and `roic_rd_capitalized` takes a pre-computed R&D asset and
+amortization, so the schedule that produces them belongs with the vintage engine.
+
+## Decimal policy (settled in M3, `schemas/decimals.py`)
+
+Calculation runs at 34 digits and never rounds intermediates; rounding mid-chain makes results
+depend on the order operations were written in. Display rounds once at the edge via
+`AnalyticalValue.formatted`, half-even throughout so sums of many roundings do not drift upward.
+Do not feed a display-rounded value back into a calculation.
 
 **Amazon and AWS are out of scope permanently.** The design doc opens with an Amazon vertical slice;
 ignore that. The author works at AWS, so the package covers Alphabet, Microsoft, Meta and Oracle

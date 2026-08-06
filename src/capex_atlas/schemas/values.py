@@ -11,6 +11,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
+from capex_atlas.schemas.decimals import format_value
 from capex_atlas.schemas.evidence import EvidenceStatus
 from capex_atlas.schemas.facts import FinancialFact
 from capex_atlas.schemas.hashing import stable_id
@@ -60,5 +61,9 @@ class AnalyticalValue(BaseModel):
         return self.value is not None and self.status is not EvidenceStatus.UNRESOLVED
 
     def __str__(self) -> str:
-        shown = "—" if self.value is None else f"{self.value:,f}"
-        return f"{self.status.glyph} {shown} {self.unit}"
+        return f"{self.status.glyph} {self.formatted}"
+
+    @property
+    def formatted(self) -> str:
+        """Display form, rounded once at the edge. Never fed back into a calculation."""
+        return format_value(self.value, self.unit)

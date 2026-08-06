@@ -25,9 +25,10 @@ from capex_atlas.provenance.errors import (
 )
 from capex_atlas.provenance.graph import active_graph
 from capex_atlas.schemas.calculation import CalculationNode
+from capex_atlas.schemas.decimals import calculation_context
 from capex_atlas.schemas.evidence import EvidenceStatus
 from capex_atlas.schemas.hashing import canonical
-from capex_atlas.schemas.period import FiscalPeriod
+from capex_atlas.schemas.period import FiscalPeriod, PeriodKind
 from capex_atlas.schemas.values import AnalyticalValue
 
 INHERIT: Final = "<inherit>"
@@ -140,12 +141,21 @@ class Metric:
         spec = self.definition
         statuses = [item.status for item in analytical] + [item.status for item in assumptions]
 
-        missing = any(item.value is None for item in analytical)
+        # A bare ``None`` means the caller had no fact for that input at all,
+        # which is routine when a filer does not tag a concept. Treat it exactly
+        # like a value-less AnalyticalValue rather than letting it reach the
+        # metric body and raise.
+        missing = any(item.value is None for item in analytical) or any(
+            item is None for item in (*args, *kwargs.values())
+        )
         if missing and not spec.allow_missing_inputs:
             return None, EvidenceStatus.UNRESOLVED
 
         try:
-            result = self._compute(*_unwrap_all(args), **_unwrap_map(kwargs))
+            # One precision setting for every metric, so a result never depends
+            # on whatever context the caller happened to be in.
+            with decimal.localcontext(calculation_context()):
+                result = self._compute(*_unwrap_all(args), **_unwrap_map(kwargs))
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             # A zero denominator is a real analytical outcome (no invested
             # capital, no revenue yet) rather than a crash, and it resolves to
@@ -177,15 +187,40 @@ class Metric:
             )
 
     def _check_periods(self, analytical: list[AnalyticalValue]) -> FiscalPeriod | None:
+        """Validate the input periods and decide which one the result belongs to.
+
+        Mixing a flow with a stock is not an error, it is what a return ratio is:
+        NOPAT earned over a year divided by capital measured at a date. So one
+        duration period alongside any number of balance-sheet dates is allowed,
+        and the result takes the duration period, because that is the span the
+        ratio describes.
+
+        Two *different* spans is a different matter and stays an error unless the
+        metric declares itself cross-period.
+        """
         periods = {item.period for item in analytical if item.period is not None}
-        if len(periods) > 1 and not self.definition.allow_mixed_periods:
-            labels = sorted(period.label for period in periods)
-            raise PeriodMismatchError(
-                f"{self.definition.metric_id} received inputs from {labels}. Set "
-                "allow_mixed_periods=True only if the metric is defined across periods, "
-                "such as a lagged incremental return."
-            )
-        return next(iter(periods)) if len(periods) == 1 else None
+        durations = {p for p in periods if p.kind is not PeriodKind.INSTANT}
+        instants = periods - durations
+
+        if not self.definition.allow_mixed_periods:
+            if len(durations) > 1:
+                raise PeriodMismatchError(
+                    f"{self.definition.metric_id} received inputs spanning "
+                    f"{sorted(p.label for p in durations)}. Set allow_mixed_periods=True only "
+                    "if the metric is defined across periods, such as a lagged incremental "
+                    "return."
+                )
+            if not durations and len(instants) > 1:
+                raise PeriodMismatchError(
+                    f"{self.definition.metric_id} received balance-sheet inputs from "
+                    f"{sorted(p.label for p in instants)} with no period to anchor them to."
+                )
+
+        if len(durations) == 1:
+            return next(iter(durations))
+        if not durations and len(instants) == 1:
+            return next(iter(instants))
+        return None
 
 
 def _unwrap(item: Any) -> Any:

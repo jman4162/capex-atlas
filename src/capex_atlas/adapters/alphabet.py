@@ -20,19 +20,41 @@ CIK = 1652044
 
 STATEMENT_MAP: dict[str, Statement] = {
     "Assets": Statement.BALANCE_SHEET,
+    "AssetsCurrent": Statement.BALANCE_SHEET,
     "Liabilities": Statement.BALANCE_SHEET,
+    "LiabilitiesCurrent": Statement.BALANCE_SHEET,
     "StockholdersEquity": Statement.BALANCE_SHEET,
     "PropertyPlantAndEquipmentNet": Statement.BALANCE_SHEET,
     "FinanceLeaseLiability": Statement.BALANCE_SHEET,
+    "CashAndCashEquivalentsAtCarryingValue": Statement.BALANCE_SHEET,
+    "MarketableSecuritiesCurrent": Statement.BALANCE_SHEET,
     "NetCashProvidedByUsedInOperatingActivities": Statement.CASH_FLOW,
     "PaymentsToAcquirePropertyPlantAndEquipment": Statement.CASH_FLOW,
+    "ProceedsFromSaleOfPropertyPlantAndEquipment": Statement.CASH_FLOW,
+    "FinanceLeasePrincipalPayments": Statement.CASH_FLOW,
+    "Revenues": Statement.INCOME_STATEMENT,
     "RevenueFromContractWithCustomerExcludingAssessedTax": Statement.INCOME_STATEMENT,
     "OperatingIncomeLoss": Statement.INCOME_STATEMENT,
     "ResearchAndDevelopmentExpense": Statement.INCOME_STATEMENT,
     "NetIncomeLoss": Statement.INCOME_STATEMENT,
+    "IncomeTaxExpenseBenefit": Statement.INCOME_STATEMENT,
     "Depreciation": Statement.INCOME_STATEMENT,
     "RevenueRemainingPerformanceObligation": Statement.OPERATIONAL,
 }
+
+CONCEPT_ALIASES: dict[str, tuple[str, ...]] = {
+    "revenue.total": (
+        "Revenues",
+        "RevenueFromContractWithCustomerExcludingAssessedTax",
+    ),
+}
+"""Canonical series to the tags Alphabet has used for them, current tag first.
+
+Alphabet reported revenue under ``RevenueFromContractWithCustomerExcludingAssessedTax``
+through the first quarter of 2025 and under ``Revenues`` afterwards. Reading
+either tag alone produces a history that stops or starts partway through, so the
+series is stitched rather than picked.
+"""
 
 CAPEX_CONCEPTS = ("PaymentsToAcquirePropertyPlantAndEquipment",)
 """Cash purchases of property and equipment.
@@ -57,6 +79,9 @@ class AlphabetAdapter:
 
     def capex_concepts(self) -> tuple[str, ...]:
         return CAPEX_CONCEPTS
+
+    def concept_aliases(self) -> dict[str, tuple[str, ...]]:
+        return dict(CONCEPT_ALIASES)
 
     def segment_support(self, source: str) -> SegmentSupport:
         if source == "sec_companyfacts":
