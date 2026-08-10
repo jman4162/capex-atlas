@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import timedelta
 from pathlib import Path
 
 import httpx
@@ -10,9 +11,10 @@ import pytest
 
 from capex_atlas.schemas.source import SourceKind
 from capex_atlas.sources.rate_limit import TokenBucket
-from capex_atlas.sources.raw import ArtifactConflictError, RawStore
+from capex_atlas.sources.raw import ArtifactConflictError, MissingArtifactError, RawStore
 from capex_atlas.sources.sec import (
     MissingUserAgentError,
+    OfflineError,
     SecClient,
     SecRequestError,
     UnknownTickerError,
@@ -252,3 +254,87 @@ class TestSecClient:
             assert client.cik_for_ticker("googl") == 1652044
             with pytest.raises(UnknownTickerError):
                 client.cik_for_ticker("NOSUCH")
+
+
+class TestCacheFreshness:
+    """The first download was served forever.
+
+    No age check, no conditional request, no way to ask for a new copy, and the
+    recorded retrieval timestamp was written and never read. A data directory
+    became a permanent snapshot the moment it was first used.
+    """
+
+    @staticmethod
+    def changing_transport(payloads: list[dict[str, object]]) -> httpx.MockTransport:
+        """Serves a different body on each call, so staleness is observable."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=payloads[min(len(payloads) - 1, handler.calls)])
+
+        handler.calls = 0  # type: ignore[attr-defined]
+
+        def counting(request: httpx.Request) -> httpx.Response:
+            response = handler(request)
+            handler.calls += 1  # type: ignore[attr-defined]
+            return response
+
+        return httpx.MockTransport(counting)
+
+    def client(self, tmp_path: Path, transport: httpx.MockTransport, **policy: object) -> SecClient:
+        return SecClient(
+            store=RawStore(tmp_path),
+            user_agent="tests (tests@example.invalid)",
+            client=httpx.Client(transport=transport),
+            **policy,  # type: ignore[arg-type]
+        )
+
+    def test_a_cached_copy_is_served_without_asking_sec_again(self, tmp_path: Path):
+        transport = self.changing_transport([{"version": 1}, {"version": 2}])
+        first = self.client(tmp_path, transport).company_facts(1652044, "GOOGL")[1]
+        second = self.client(tmp_path, transport).company_facts(1652044, "GOOGL")[1]
+        assert first == second == {"version": 1}
+
+    def test_refresh_fetches_a_new_copy(self, tmp_path: Path):
+        transport = self.changing_transport([{"version": 1}, {"version": 2}])
+        self.client(tmp_path, transport).company_facts(1652044, "GOOGL")
+        _, payload = self.client(tmp_path, transport, refresh=True).company_facts(1652044, "GOOGL")
+        assert payload == {"version": 2}
+
+    def test_the_new_copy_lands_beside_the_old_one(self, tmp_path: Path):
+        transport = self.changing_transport([{"version": 1}, {"version": 2}])
+        self.client(tmp_path, transport).company_facts(1652044, "GOOGL")
+        self.client(tmp_path, transport, refresh=True).company_facts(1652044, "GOOGL")
+        stored = sorted(p.name for p in tmp_path.rglob("companyfacts*.json"))
+        assert len(stored) == 2, stored
+        # Both keep their own hash and timestamp; neither overwrote the other.
+        artifacts = RawStore(tmp_path).manifest(SourceKind.SEC_FILING, "GOOGL", None)
+        assert len({a.sha256 for a in artifacts}) == 2
+
+    def test_an_expired_copy_is_refetched(self, tmp_path: Path):
+        transport = self.changing_transport([{"version": 1}, {"version": 2}])
+        self.client(tmp_path, transport).company_facts(1652044, "GOOGL")
+        fresh = self.client(tmp_path, transport, max_age=timedelta(seconds=0))
+        assert fresh.company_facts(1652044, "GOOGL")[1] == {"version": 2}
+
+    def test_a_copy_within_max_age_is_kept(self, tmp_path: Path):
+        transport = self.changing_transport([{"version": 1}, {"version": 2}])
+        self.client(tmp_path, transport).company_facts(1652044, "GOOGL")
+        recent = self.client(tmp_path, transport, max_age=timedelta(days=7))
+        assert recent.company_facts(1652044, "GOOGL")[1] == {"version": 1}
+
+    def test_offline_serves_the_cache_and_refuses_to_fetch(self, tmp_path: Path):
+        transport = self.changing_transport([{"version": 1}])
+        self.client(tmp_path, transport).company_facts(1652044, "GOOGL")
+        offline = self.client(tmp_path, transport, offline=True)
+        assert offline.company_facts(1652044, "GOOGL")[1] == {"version": 1}
+
+        with pytest.raises(OfflineError, match="offline"):
+            self.client(tmp_path / "empty", transport, offline=True).company_facts(1, "MSFT")
+
+    def test_deleting_the_file_but_not_the_manifest_says_so(self, tmp_path: Path):
+        transport = self.changing_transport([{"version": 1}])
+        self.client(tmp_path, transport).company_facts(1652044, "GOOGL")
+        for path in tmp_path.rglob("companyfacts*.json"):
+            path.unlink()
+        with pytest.raises(MissingArtifactError, match="missing from disk"):
+            self.client(tmp_path, transport).company_facts(1652044, "GOOGL")

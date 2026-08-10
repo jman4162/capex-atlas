@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from datetime import timedelta
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -50,14 +51,52 @@ DEFAULT_DATA = Path("data") / "raw"
 
 TickerArg = Annotated[str, typer.Argument(help="Ticker, e.g. GOOGL")]
 PeriodOpt = Annotated[str, typer.Option("--through", help="Fiscal period, e.g. 2025FY or 2026Q2")]
+RefreshOpt = Annotated[
+    bool, typer.Option("--refresh", help="Fetch from SEC even if a cached copy exists.")
+]
+MaxAgeOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--max-age",
+        help="Refetch if the cached copy is older than this, e.g. 7d, 12h, 30m. "
+        "Without it a cached copy is used however old it is.",
+    ),
+]
+OfflineOpt = Annotated[
+    bool, typer.Option("--offline", help="Never reach SEC; fail if the cache cannot serve.")
+]
 
 
-def _client(data_dir: Path) -> SecClient:
-    return SecClient(store=RawStore(data_dir))
+def _client(
+    data_dir: Path,
+    *,
+    refresh: bool = False,
+    max_age: timedelta | None = None,
+    offline: bool = False,
+) -> SecClient:
+    return SecClient(store=RawStore(data_dir), refresh=refresh, max_age=max_age, offline=offline)
 
 
-def _load_facts(ticker: str, data_dir: Path) -> tuple[dict[str, Any], SourceReference]:
-    with _client(data_dir) as client:
+def _parse_max_age(value: str | None) -> timedelta | None:
+    """``7d``, ``12h`` or ``30m``. A cache with no stated lifetime never expires."""
+    if value is None:
+        return None
+    units = {"d": "days", "h": "hours", "m": "minutes"}
+    suffix = value[-1:].lower()
+    if suffix not in units or not value[:-1].isdigit():
+        raise typer.BadParameter(f"expected a duration like 7d, 12h or 30m, got {value!r}")
+    return timedelta(**{units[suffix]: int(value[:-1])})
+
+
+def _load_facts(
+    ticker: str,
+    data_dir: Path,
+    *,
+    refresh: bool = False,
+    max_age: timedelta | None = None,
+    offline: bool = False,
+) -> tuple[dict[str, Any], SourceReference]:
+    with _client(data_dir, refresh=refresh, max_age=max_age, offline=offline) as client:
         cik = client.cik_for_ticker(ticker)
         artifact, payload = client.company_facts(cik, ticker)
     return payload, artifact.to_source_reference()
@@ -84,9 +123,20 @@ def disclaimer() -> None:
 def ingest(
     ticker: TickerArg,
     data_dir: Annotated[Path, typer.Option("--data-dir")] = DEFAULT_DATA,
+    refresh: RefreshOpt = False,
+    max_age: MaxAgeOpt = None,
+    offline: OfflineOpt = False,
 ) -> None:
-    """Download a filer's Company Facts into the raw store."""
-    payload, source = _load_facts(ticker, data_dir)
+    """Download a filer's Company Facts into the raw store.
+
+    A stored copy is reused unless you ask otherwise. It used to be reused
+    always: there was no age check and no way to request a new one, so a data
+    directory froze on first use and every later bundle cited that first
+    download's timestamp.
+    """
+    payload, source = _load_facts(
+        ticker, data_dir, refresh=refresh, max_age=_parse_max_age(max_age), offline=offline
+    )
     concepts = len(payload.get("facts", {}).get("us-gaap", {}))
     typer.echo(f"{ticker}: {concepts} us-gaap concepts stored under {data_dir}")
     typer.echo(f"source: {source.url}")
@@ -96,6 +146,9 @@ def ingest(
 def reconcile_cmd(
     ticker: TickerArg,
     data_dir: Annotated[Path, typer.Option("--data-dir")] = DEFAULT_DATA,
+    refresh: RefreshOpt = False,
+    max_age: MaxAgeOpt = None,
+    offline: OfflineOpt = False,
 ) -> None:
     """Run the accounting identities over a filer's facts.
 
@@ -110,7 +163,9 @@ def reconcile_cmd(
     # one adapter here meant `reconcile MSFT` silently applied a December
     # year-end to a June filer.
     adapter = adapter_for(ticker)
-    payload, source = _load_facts(ticker, data_dir)
+    payload, source = _load_facts(
+        ticker, data_dir, refresh=refresh, max_age=_parse_max_age(max_age), offline=offline
+    )
     extraction = extract_facts(
         payload,
         entity_id=ticker,
@@ -161,10 +216,15 @@ def analyze(
             "It will not pass audit, and the override is recorded in it.",
         ),
     ] = False,
+    refresh: RefreshOpt = False,
+    max_age: MaxAgeOpt = None,
+    offline: OfflineOpt = False,
 ) -> None:
     """Build an analysis bundle and optionally write it out."""
     adapter_for(ticker)  # fail before the download if the filer is not covered
-    payload, source = _load_facts(ticker, data_dir)
+    payload, source = _load_facts(
+        ticker, data_dir, refresh=refresh, max_age=_parse_max_age(max_age), offline=offline
+    )
     bundle = build_analysis(
         payload,
         entity_id=ticker,

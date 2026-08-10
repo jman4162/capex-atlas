@@ -21,6 +21,10 @@ from capex_atlas.schemas.source import SourceKind, SourceReference
 MANIFEST_NAME = "manifest.json"
 
 
+class MissingArtifactError(FileNotFoundError):
+    """The manifest records an artifact whose bytes are no longer on disk."""
+
+
 class ArtifactConflictError(RuntimeError):
     """A stored artifact already exists at this path with different content."""
 
@@ -108,7 +112,15 @@ class RawStore:
                 )
             recorded = self._read_manifest(target.parent).get(name)
             if recorded is not None:
-                return RawArtifact.model_validate(recorded)
+                existing = RawArtifact.model_validate(recorded)
+                if retrieved_at is None or retrieved_at <= existing.retrieved_at:
+                    return existing
+                # Same bytes, seen again later. The content is immutable; when we
+                # last confirmed it is not, and an age check needs the newer time
+                # or it refetches unchanged data on every run.
+                refreshed = existing.model_copy(update={"retrieved_at": retrieved_at})
+                self._write_manifest_entry(target.parent, name, refreshed)
+                return refreshed
 
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(content)
@@ -133,6 +145,14 @@ class RawStore:
     def read(self, artifact: RawArtifact) -> bytes:
         """Return the stored bytes, verifying they still match the recorded hash."""
         path = self.root / artifact.relative_path
+        if not path.exists():
+            # Deleting an artifact but leaving the manifest is the obvious way to
+            # try to force a refresh, and it used to surface as a bare
+            # FileNotFoundError from three frames down.
+            raise MissingArtifactError(
+                f"{path} is recorded in the manifest but missing from disk. "
+                "Remove the containing directory to discard it, or refetch."
+            )
         content = path.read_bytes()
         digest = hashlib.sha256(content).hexdigest()
         if digest != artifact.sha256:

@@ -47,11 +47,12 @@ def offline_sec(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
             return httpx.Response(200, json=index)
         return httpx.Response(200, json=payload)
 
-    def fake_client(data_dir: Path) -> SecClient:
+    def fake_client(data_dir: Path, **policy: object) -> SecClient:
         return SecClient(
             store=RawStore(data_dir),
             user_agent=AGENT,
             client=httpx.Client(transport=httpx.MockTransport(handler)),
+            **policy,  # type: ignore[arg-type]
         )
 
     monkeypatch.setattr(cli, "_client", fake_client)
