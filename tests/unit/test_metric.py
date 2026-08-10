@@ -188,3 +188,55 @@ def test_sources_propagate_up_the_graph(fact):
     with calculation_graph() as graph:
         result = difference(reported, make_value("40", value_id="b"))
     assert fact.source.source_id in graph.leaf_source_ids(result.value_id)
+
+
+@metric(metric_id="test.bind_subtract", version="1", formula="a - b", unit="USD")
+def _bind_subtract(a: Decimal, b: Decimal) -> Decimal:
+    return a - b
+
+
+@metric(metric_id="test.bind_add", version="1", formula="a + b", unit="USD")
+def _bind_add(a: Decimal, b: Decimal = Decimal(0)) -> Decimal:
+    return a + b
+
+
+def _usd(amount: str, key: str):  # type: ignore[no-untyped-def]
+    return make_value(amount, unit="USD", value_id=key)
+
+
+class TestArgumentsBindToTheirDeclaredPositions:
+    """Content-addressing is only sound if the id sees the real inputs.
+
+    ``derive_id`` preserves input order on purpose, because ``a - b`` and
+    ``b - a`` are different calculations. The call path defeated that by reading
+    ``kwargs.values()``, which follows call-site insertion order and carries no
+    parameter names.
+    """
+
+    def test_swapped_keyword_bindings_are_different_calculations(self):
+        left, right = _usd("10", "l"), _usd("3", "r")
+        with calculation_graph():
+            forward = _bind_subtract(a=left, b=right)
+        with calculation_graph():
+            backward = _bind_subtract(b=left, a=right)
+        assert forward.value == Decimal(7)
+        assert backward.value == Decimal(-7)
+        assert forward.formula_node_id != backward.formula_node_id, (
+            "opposite results shared one node id, so the graph could not tell them apart"
+        )
+
+    def test_the_same_call_written_two_ways_is_one_calculation(self):
+        left, right = _usd("10", "l"), _usd("3", "r")
+        with calculation_graph():
+            positional = _bind_subtract(left, right)
+        with calculation_graph():
+            keyword = _bind_subtract(a=left, b=right)
+        assert positional.formula_node_id == keyword.formula_node_id
+
+    def test_a_default_argument_binds_before_hashing(self):
+        left = _usd("10", "l")
+        with calculation_graph():
+            implicit = _bind_add(left)
+        with calculation_graph():
+            explicit = _bind_add(left, Decimal(0))
+        assert implicit.formula_node_id == explicit.formula_node_id

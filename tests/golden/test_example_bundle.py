@@ -131,3 +131,34 @@ class TestTheExampleCarriesItsCharts:
                 f"{filename} has drifted from the bundle. "
                 "Regenerate: uv run python scripts/generate_readme_figures.py"
             )
+
+
+def test_node_ids_are_stable_across_kernel_changes(committed):  # type: ignore[no-untyped-def]
+    """Content addresses are only useful if they survive refactoring.
+
+    A stored bundle names its calculations by hash. If the kernel changes how it
+    derives them, every citation into every published bundle silently points at
+    nothing. This pins the fourteen ids the committed example carries, so a change
+    to the derivation has to be a deliberate migration rather than a side effect.
+
+    The keyword-binding fix was chosen partly to keep this list intact: binding
+    arguments to their declared positions changes which calls collide without
+    changing what any existing call hashes to.
+    """
+    ids = sorted(node.node_id for node in committed.calculations)
+    assert ids == [
+        "calc:1bed0f31ce7e1155",
+        "calc:1e8f864677c3cce4",
+        "calc:2593047f3f99dd64",
+        "calc:2b9bcd056cd30653",
+        "calc:63d6da11626ba701",
+        "calc:6cf5d72b75ed0536",
+        "calc:a0cbf733679405fb",
+        "calc:abf7ef5c7ec2c14c",
+        "calc:c0355abbdd37d413",
+        "calc:de67f4477a9ebb1f",
+        "calc:e8e175aea4d02ed7",
+        "calc:ede130ecd087e331",
+        "calc:ef6ebc84a3bd57b5",
+        "calc:ff3e47717df969e5",
+    ]

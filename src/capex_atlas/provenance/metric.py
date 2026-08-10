@@ -15,6 +15,7 @@ import decimal
 from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
+from inspect import signature
 from typing import Any, Final
 
 from capex_atlas.assumptions.models import Assumption
@@ -61,13 +62,32 @@ class Metric:
         self.__name__ = compute.__name__
         self.__doc__ = compute.__doc__
 
+    def _in_declared_order(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> list[Any]:
+        """Arguments in the order the metric declares them, however they arrived.
+
+        Node ids are content-addressed over the inputs in order, because ``a - b``
+        and ``b - a`` are different calculations that must not collide. Reading
+        ``kwargs.values()`` defeated that: it follows call-site insertion order and
+        carries no parameter names, so ``subtract(a=x, b=y)`` and
+        ``subtract(b=x, a=y)`` presented the same ordered inputs and were handed
+        the same id for results of 7 and -7.
+
+        Binding through the signature puts every argument back where the metric
+        declared it. Names are deliberately not folded into the hash: the metric
+        id plus declared position already identifies a parameter, and adding names
+        would change every id in every stored bundle to fix nothing.
+        """
+        bound = signature(self._compute).bind(*args, **kwargs)
+        bound.apply_defaults()
+        return list(bound.arguments.values())
+
     def __call__(self, *args: Any, **kwargs: Any) -> AnalyticalValue:
         spec = self.definition
         # Reserved kernel kwarg. Cross-period metrics cannot infer their own
         # output period -- a discrete quarter derived by differencing two
         # year-to-date figures belongs to neither input -- so the caller states it.
         output_period: FiscalPeriod | None = kwargs.pop(OUTPUT_PERIOD_KWARG, None)
-        ordered = [*args, *kwargs.values()]
+        ordered = self._in_declared_order(args, kwargs)
         analytical = [item for item in ordered if isinstance(item, AnalyticalValue)]
         assumptions = [item for item in ordered if isinstance(item, Assumption)]
 
