@@ -1,11 +1,8 @@
 # Capex Atlas
 
-[![CI](https://img.shields.io/github/actions/workflow/status/jman4162/capex-atlas/ci.yml?branch=main&label=CI&logo=github)](https://github.com/jman4162/capex-atlas/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/jman4162/capex-atlas)](LICENSE) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![mypy](https://img.shields.io/badge/mypy-strict-2a6db2.svg)](https://mypy-lang.org/) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit) [![every number](https://img.shields.io/badge/every%20number-source--linked-2ea44f)](#the-two-mechanisms)
+[![PyPI](https://img.shields.io/pypi/v/capex-atlas.svg?logo=pypi&logoColor=white)](https://pypi.org/project/capex-atlas/) [![Python versions](https://img.shields.io/pypi/pyversions/capex-atlas.svg?logo=python&logoColor=white)](https://pypi.org/project/capex-atlas/) [![CI](https://img.shields.io/github/actions/workflow/status/jman4162/capex-atlas/ci.yml?branch=main&label=CI&logo=github)](https://github.com/jman4162/capex-atlas/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/jman4162/capex-atlas)](LICENSE) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![mypy](https://img.shields.io/badge/mypy-strict-2a6db2.svg)](https://mypy-lang.org/) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit) [![every number](https://img.shields.io/badge/every%20number-source--linked-2ea44f)](#the-two-mechanisms)
 
-<!-- DEFER: add at the first PyPI release, these render broken until then
-[![PyPI](https://img.shields.io/pypi/v/capex-atlas.svg?logo=pypi&logoColor=white)](https://pypi.org/project/capex-atlas/)
-[![Python versions](https://img.shields.io/pypi/pyversions/capex-atlas.svg?logo=python&logoColor=white)](https://pypi.org/project/capex-atlas/)
-DEFER: add once the Streamlit Cloud app is deployed; see RELEASING.md
+<!-- DEFER: add once the Streamlit Cloud app is deployed; see RELEASING.md
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://capex-atlas.streamlit.app)
 -->
 
