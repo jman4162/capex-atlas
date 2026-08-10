@@ -71,7 +71,10 @@ class TestCapitalIntensity:
     def test_capex_over_revenue(self):
         result = capex_intensity(usd("25", key="a"), usd("100", key="b"))
         assert result.value == Decimal("0.25")
-        assert result.unit == "ratio"
+        # Stored as a fraction, declared as a percentage. The unit governs
+        # display only, so the arithmetic above is unaffected by it.
+        assert result.unit == "percent"
+        assert result.formatted == "25.00%"
 
     def test_capex_to_depreciation_above_one_means_growth(self):
         assert capex_to_depreciation(usd("30", key="a"), usd("10", key="b")).value == Decimal("3")
@@ -114,10 +117,11 @@ class TestReturns:
         assert without.value == Decimal("120")
         assert without.value < with_cash.value
 
-    def test_roic_is_a_ratio(self):
+    def test_roic_is_a_percentage(self):
         result = roic(usd("40", key="a"), usd("200", key="b"))
         assert result.value == Decimal("0.2")
-        assert result.unit == "ratio"
+        assert result.unit == "percent"
+        assert result.formatted == "20.00%"
 
     def test_averaging_capital_raises_roic_when_the_base_grew(self):
         point = roic(usd("40", key="a"), usd("200", key="b"))
@@ -169,7 +173,7 @@ class TestPrecisionPolicy:
 
     def test_display_rounds_once_at_the_edge(self):
         result = roic(usd("1", key="a"), usd("3", key="b"))
-        assert result.formatted == "0.333333"
+        assert result.formatted == "33.33%"
 
     def test_rounding_is_half_even(self):
         # Half-up would give 0.13 and 0.15; half-even avoids biasing sums upward.

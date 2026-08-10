@@ -14,8 +14,9 @@ from __future__ import annotations
 
 import json
 from decimal import Decimal
+from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 from pydantic import BaseModel, ConfigDict
 
@@ -31,10 +32,50 @@ from capex_atlas.scenarios.model import ScenarioDefinition, ScenarioResult
 from capex_atlas.scenarios.run import run_scenario
 from capex_atlas.schemas.calculation import CalculationNode
 from capex_atlas.schemas.charts import ChartSpec
+from capex_atlas.schemas.decimals import format_compact, format_value
 from capex_atlas.schemas.evidence import EvidenceStatus
+from capex_atlas.schemas.facts import FinancialFact
 from capex_atlas.schemas.source import SourceKind, SourceReference
 from capex_atlas.schemas.values import AnalyticalValue
 from capex_atlas.viz.render import render
+
+CARD_TITLES: Final = {
+    "return on invested capital (operating basis)": "ROIC (operating basis)",
+    "return on invested capital (excluding cash)": "ROIC (excluding cash)",
+    "net operating profit after tax": "NOPAT",
+}
+"""Labels whose display form is not just the label capitalised.
+
+Only the abbreviations earn an entry. Everything else takes a leading capital,
+because a table of hand-written titles drifts from the labels it mirrors.
+"""
+
+CONCEPT_TITLES: Final = {
+    "PaymentsToAcquirePropertyPlantAndEquipment": "Capital expenditure",
+    "NetCashProvidedByUsedInOperatingActivities": "Cash from operations",
+    "DepreciationDepletionAndAmortization": "Depreciation and amortization",
+    "Depreciation": "Depreciation",
+    "Revenues": "Revenue",
+    "OperatingIncomeLoss": "Operating income",
+    "Assets": "Total assets",
+    "LiabilitiesCurrent": "Current liabilities",
+    "CashAndCashEquivalentsAtCarryingValue": "Cash and equivalents",
+    "MarketableSecuritiesCurrent": "Marketable securities",
+    "FinanceLeasePrincipalPayments": "Finance lease principal",
+}
+"""Readable names for the XBRL tags a reader is likely to meet.
+
+An unmapped tag falls back to the tag itself, which is ugly but never wrong.
+"""
+
+HEADLINE_RATIOS: Final = ("capex to depreciation", "capex intensity")
+HEADLINE_LINEAGE: Final = "capex to depreciation"
+"""The published value whose leaves are the two figures worth leading with."""
+
+
+def display_title(label: str) -> str:
+    """A card label as a reader should see it."""
+    return CARD_TITLES.get(label) or label[:1].upper() + label[1:]
 
 
 class MetricCard(BaseModel):
@@ -43,7 +84,13 @@ class MetricCard(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     label: str
+    """The bundle's own label. The lookup key, so never rewritten for display."""
+    title: str
+    """What a reader sees. ``ROIC (operating basis)`` for the label above."""
     formatted: str
+    """The exact figure: ``73,266,000,000.00 USD``. For tooltips and checking."""
+    display: str
+    """The scanning figure: ``$73.3B``. For the face of the card."""
     status: EvidenceStatus
     glyph: str
     period_label: str | None
@@ -57,7 +104,13 @@ class MetricCard(BaseModel):
 
 
 class ProvenanceNode(BaseModel):
-    """One step in a value's lineage, with its depth for indenting."""
+    """One step in a value's lineage, with its depth for indenting.
+
+    A step is either a calculation or a leaf fact read from a filing. Leaves
+    carry ``concept`` and no ``formula``, which is how a renderer tells them
+    apart: the tree bottoms out in things a company reported, and showing that
+    is the whole point of the page.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -68,6 +121,13 @@ class ProvenanceNode(BaseModel):
     unit: str
     status: EvidenceStatus
     node_id: str
+    concept: str | None = None
+    """The XBRL tag, when this step is a reported fact rather than a calculation."""
+    period_label: str | None = None
+
+    @property
+    def is_fact(self) -> bool:
+        return self.concept is not None
 
 
 class SeriesPoint(BaseModel):
@@ -128,6 +188,22 @@ class AtlasApplication:
 
     # --------------------------------------------------------------- overview
 
+    def headline(self) -> list[MetricCard]:
+        """What the company did with its money, before any of the modelling.
+
+        Two reported facts and the two ratios built from them. A reader arriving
+        cold wants the spending itself first; every other published figure on the
+        page is a calculation, so without this the lab never shows a single ●
+        reported number despite being built to distinguish them.
+        """
+        facts = [
+            self._fact_card(node)
+            for node in self.lineage(HEADLINE_LINEAGE)
+            if node.is_fact and node.result is not None
+        ]
+        ratios = [self.card(label) for label in HEADLINE_RATIOS]
+        return [*facts, *[card for card in ratios if card is not None]]
+
     def overview(self) -> list[MetricCard]:
         """Every headline value as a renderable card."""
         return [self._card(value) for value in self.bundle.values]
@@ -136,11 +212,30 @@ class AtlasApplication:
         value = self.bundle.value(label)
         return self._card(value) if value else None
 
+    def _fact_card(self, node: ProvenanceNode) -> MetricCard:
+        """A reported fact dressed as a card, so it sits beside derived ones."""
+        concept = node.concept or node.metric_id
+        return MetricCard(
+            label=concept,
+            title=CONCEPT_TITLES.get(concept, concept),
+            formatted=format_value(node.result, node.unit),
+            display=format_compact(node.result, node.unit),
+            status=node.status,
+            glyph=node.status.glyph,
+            period_label=node.period_label,
+            formula=None,
+            source_count=1,
+            assumption_ids=(),
+        )
+
     def _card(self, value: AnalyticalValue) -> MetricCard:
         node = self.bundle.node(value.formula_node_id) if value.formula_node_id else None
+        label = value.label or value.value_id
         return MetricCard(
-            label=value.label or value.value_id,
+            label=label,
+            title=display_title(label),
             formatted=value.formatted,
+            display=format_compact(value.value, value.unit),
             status=value.status,
             glyph=value.status.glyph,
             period_label=value.period.label if value.period else None,
@@ -171,6 +266,19 @@ class AtlasApplication:
         self._walk(value.formula_node_id, depth=0, seen=set(), into=collected)
         return collected
 
+    @cached_property
+    def _facts_by_value_id(self) -> dict[str, FinancialFact]:
+        """Leaf inputs, keyed the way a calculation node refers to them.
+
+        A node's ``inputs`` are ``AnalyticalValue`` ids, and the leaves of every
+        chain are facts read from a filing. The bundle stores the facts but not
+        the wrapper values, so the id is recomputed here through the same
+        constructor the metric layer used. Recomputing rather than storing keeps
+        the bundle smaller and cannot drift: if ``from_fact`` ever changes, both
+        sides change together.
+        """
+        return {AnalyticalValue.from_fact(fact).value_id: fact for fact in self.bundle.facts}
+
     def _walk(
         self, node_id: str, *, depth: int, seen: set[str], into: list[ProvenanceNode]
     ) -> None:
@@ -179,6 +287,7 @@ class AtlasApplication:
         seen.add(node_id)
         node = self.bundle.node(node_id)
         if node is None:
+            self._append_fact(node_id, depth=depth, into=into)
             return
         into.append(
             ProvenanceNode(
@@ -189,10 +298,35 @@ class AtlasApplication:
                 unit=node.unit,
                 status=node.status,
                 node_id=node.node_id,
+                period_label=node.period_label,
             )
         )
         for child in node.inputs:
             self._walk(child, depth=depth + 1, seen=seen, into=into)
+
+    def _append_fact(self, value_id: str, *, depth: int, into: list[ProvenanceNode]) -> None:
+        """Bottom out the tree in something a company reported.
+
+        An unresolvable id is skipped rather than raised on. A tree missing a
+        leaf is still an honest account of the rest; a page that dies because
+        one input was pruned from the bundle is not.
+        """
+        fact = self._facts_by_value_id.get(value_id)
+        if fact is None:
+            return
+        into.append(
+            ProvenanceNode(
+                depth=depth,
+                metric_id=fact.metric_id,
+                formula="",
+                result=fact.value,
+                unit=fact.unit,
+                status=fact.status,
+                node_id=value_id,
+                concept=fact.xbrl_concept or fact.metric_id,
+                period_label=fact.period.label if fact.period else None,
+            )
+        )
 
     def sources_for(self, label: str) -> list[SourceReference]:
         """The filings a value rests on."""

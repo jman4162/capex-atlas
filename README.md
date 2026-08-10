@@ -2,9 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/capex-atlas.svg?logo=pypi&logoColor=white)](https://pypi.org/project/capex-atlas/) [![Python versions](https://img.shields.io/pypi/pyversions/capex-atlas.svg?logo=python&logoColor=white)](https://pypi.org/project/capex-atlas/) [![CI](https://img.shields.io/github/actions/workflow/status/jman4162/capex-atlas/ci.yml?branch=main&label=CI&logo=github)](https://github.com/jman4162/capex-atlas/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/jman4162/capex-atlas)](LICENSE) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![mypy](https://img.shields.io/badge/mypy-strict-2a6db2.svg)](https://mypy-lang.org/) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit) [![every number](https://img.shields.io/badge/every%20number-source--linked-2ea44f)](#the-two-mechanisms)
 
-<!-- DEFER: add once the Streamlit Cloud app is deployed; see RELEASING.md
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://capex-atlas.streamlit.app)
--->
 
 **Source-linked models of hyperscaler capital deployment, built from SEC filings.**
 
@@ -65,18 +63,18 @@ Management says servers pay back in under three years. What would have to be tru
 ```text
 $ capex-atlas app        # Vintage simulator -> Run scenario
 
-○ net present value        1,195.86 USD
-○ internal rate of return  0.140958
-○ payback period           3.444072 years
+○ Net present value        $1.2B
+○ Internal rate of return  14.1%
+○ Payback                  3.4 years
 
 What must be true for a three-year payback?
-  No utilization between 0.05 and 1 reaches payback_years of 3. On these
+  No utilization between 5.0% and 100.0% reaches payback of 3.0 years. On these
   assumptions the claim cannot hold anywhere in the plausible range.
 
 What the answer rests on, most sensitive first:
-  revenue_yield     moves NPV by  5,036
-  operating_margin  moves NPV by  4,295
-  lead_time_years   moves NPV by  2,551
+  Revenue yield     · 0.25 → 0.6            swings NPV by  $5.0B
+  Operating margin  · 45.0% → 65.0%         swings NPV by  $4.3B
+  Lead time         · 0.0 years → 3.0 years swings NPV by  $2.6B
 ```
 
 The refusal is the useful answer. Utilization is capped at 100%, and even there the ramp keeps

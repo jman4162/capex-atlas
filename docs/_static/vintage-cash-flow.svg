@@ -4,15 +4,15 @@
 <text x="96" y="34" font-size="19" fill="#333333" font-weight="600">GOOGL: modelled cash profile of one capital vintage</text>
 <text x="96" y="56" font-size="13" fill="#666666">Illustrative assumptions, not an estimate of any company's returns</text>
 <line x1="96" y1="342.0" x2="872" y2="342.0" stroke="#e3e3e3" stroke-width="1"/>
-<text x="86" y="346.0" font-size="11" fill="#666666" text-anchor="end">-8.6k</text>
+<text x="86" y="346.0" font-size="11" fill="#666666" text-anchor="end">-8.6B</text>
 <line x1="96" y1="276.0" x2="872" y2="276.0" stroke="#e3e3e3" stroke-width="1"/>
-<text x="86" y="280.0" font-size="11" fill="#666666" text-anchor="end">-5.8k</text>
+<text x="86" y="280.0" font-size="11" fill="#666666" text-anchor="end">-5.8B</text>
 <line x1="96" y1="210.0" x2="872" y2="210.0" stroke="#e3e3e3" stroke-width="1"/>
-<text x="86" y="214.0" font-size="11" fill="#666666" text-anchor="end">-3.0k</text>
+<text x="86" y="214.0" font-size="11" fill="#666666" text-anchor="end">-3.0B</text>
 <line x1="96" y1="144.0" x2="872" y2="144.0" stroke="#e3e3e3" stroke-width="1"/>
-<text x="86" y="148.0" font-size="11" fill="#666666" text-anchor="end">-190</text>
+<text x="86" y="148.0" font-size="11" fill="#666666" text-anchor="end">-190.0M</text>
 <line x1="96" y1="78.0" x2="872" y2="78.0" stroke="#e3e3e3" stroke-width="1"/>
-<text x="86" y="82.0" font-size="11" fill="#666666" text-anchor="end">2.6k</text>
+<text x="86" y="82.0" font-size="11" fill="#666666" text-anchor="end">2.6B</text>
 <line x1="96" y1="139.5" x2="872" y2="139.5" stroke="#333333" stroke-width="1.4"/>
 <rect x="108.1" y="139.5" width="62.1" height="202.5" fill="#2f5d8a" opacity="0.55"/>
 <rect x="108.1" y="139.5" width="62.1" height="202.5" fill="url(#hatch-scenario)" opacity="0.85"/>

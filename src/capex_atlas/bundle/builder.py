@@ -62,8 +62,16 @@ class FactScope(StrEnum):
     PERIOD = "period"
     """The analyzed period and its balance-sheet date."""
 
+    ANNUAL = "annual"
+    """Every annual period, and nothing quarterly.
+
+    What the charts actually consume: they plot annual figures only, because
+    mixing quarters with year-to-date figures on one axis produces a sawtooth.
+    Carrying the quarterly facts as well triples the file for nothing drawn.
+    """
+
     ALL = "all"
-    """Everything extracted, so charts have a history to draw."""
+    """Everything extracted, quarters included."""
 
 
 def _select_facts(
@@ -76,6 +84,11 @@ def _select_facts(
 ) -> tuple[FinancialFact, ...]:
     if scope is FactScope.ALL:
         keep = list(facts)
+    elif scope is FactScope.ANNUAL:
+        # Instants come too: a balance-sheet figure has no duration, and dropping
+        # them would strip invested capital out of the history.
+        annual = {PeriodKind.FISCAL_YEAR, PeriodKind.INSTANT}
+        keep = [fact for fact in facts if fact.period.kind in annual]
     elif scope is FactScope.PERIOD:
         wanted = {period_label, balance_label}
         keep = [fact for fact in facts if fact.period.label in wanted]

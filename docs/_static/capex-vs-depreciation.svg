@@ -14,9 +14,15 @@
 <line x1="96" y1="78.0" x2="872" y2="78.0" stroke="#e3e3e3" stroke-width="1"/>
 <text x="86" y="82.0" font-size="11" fill="#666666" text-anchor="end">91.4B</text>
 <line x1="96" y1="342.0" x2="872" y2="342.0" stroke="#333333" stroke-width="1.4"/>
-<rect x="410.0" y="78.0" width="74.0" height="264.0" fill="#2f5d8a" opacity="1.00"/>
-<rect x="484.0" y="281.0" width="74.0" height="61.0" fill="#c2724a" opacity="1.00"/>
-<text x="484.0" y="362" font-size="12" fill="#333333" text-anchor="middle">2025FY</text>
+<rect x="151.3" y="248.9" width="74.0" height="93.1" fill="#2f5d8a" opacity="1.00"/>
+<rect x="410.0" y="190.3" width="74.0" height="151.7" fill="#2f5d8a" opacity="1.00"/>
+<rect x="668.7" y="78.0" width="74.0" height="264.0" fill="#2f5d8a" opacity="1.00"/>
+<rect x="225.3" y="307.5" width="74.0" height="34.5" fill="#c2724a" opacity="1.00"/>
+<rect x="484.0" y="297.8" width="74.0" height="44.2" fill="#c2724a" opacity="1.00"/>
+<rect x="742.7" y="281.0" width="74.0" height="61.0" fill="#c2724a" opacity="1.00"/>
+<text x="225.3" y="362" font-size="12" fill="#333333" text-anchor="middle">2023FY</text>
+<text x="484.0" y="362" font-size="12" fill="#333333" text-anchor="middle">2024FY</text>
+<text x="742.7" y="362" font-size="12" fill="#333333" text-anchor="middle">2025FY</text>
 <rect x="96" y="377" width="11" height="11" fill="#2f5d8a"/>
 <text x="113" y="386" font-size="12" fill="#333333">capex</text>
 <rect x="153" y="377" width="11" height="11" fill="#c2724a"/>

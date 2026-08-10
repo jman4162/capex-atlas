@@ -19,6 +19,9 @@ from capex_atlas.disclaimer import SHORT
 from capex_atlas.schemas.charts import ChartSpec, ChartType
 from capex_atlas.schemas.evidence import EvidenceStatus
 
+MIN_LINE_POINTS = 3
+"""Below this a timeline is drawn as bars. A trend needs points to be a trend."""
+
 STATUS_PATTERN: dict[EvidenceStatus, str] = {
     EvidenceStatus.REPORTED: "",
     EvidenceStatus.DERIVED: "",
@@ -100,7 +103,7 @@ def _trace(
     statuses: list[EvidenceStatus],
 ) -> dict[str, Any]:
     numbers = [None if item is None else float(_as_decimal(item)) for item in y]
-    mode = _mode_for(spec.chart_type)
+    mode = _mode_for(spec.chart_type, points=sum(1 for item in numbers if item is not None))
     trace: dict[str, Any] = {
         "type": mode,
         "name": name,
@@ -125,12 +128,15 @@ def _trace(
     return trace
 
 
-def _mode_for(chart_type: ChartType) -> str:
+def _mode_for(chart_type: ChartType, *, points: int) -> str:
     if chart_type in (
         ChartType.CAPEX_COMPOSITION_TIMELINE,
         ChartType.SPEND_TO_SERVICE_TIMELINE,
     ):
-        return "scatter"
+        # A line needs a run to be a line. One or two points render as specks on
+        # an empty grid and read as a broken chart rather than a thin one, so a
+        # bundle carrying only the analyzed period gets bars instead.
+        return "scatter" if points >= MIN_LINE_POINTS else "bar"
     if chart_type is ChartType.VINTAGE_HEATMAP:
         return "heatmap"
     return "bar"

@@ -29,18 +29,24 @@ from capex_atlas.capital_vintages.solver import Lever, Target
 from capex_atlas.obs import tracing
 from capex_atlas.scenarios.model import ScenarioDefinition
 from capex_atlas.schemas.capital import CapitalCategory
+from capex_atlas.schemas.decimals import format_compact
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from components import (
     assumption_panel,
+    card_grid,
     disclaimer_footer,
     evidence_badge,
     metric_card,
     provenance_tree,
+    sensitivity_line,
     source_list,
     status_legend,
 )
+
+PER_BILLION = Decimal("1e9")
+"""Scenario spend is entered in billions; the engine works in dollars."""
 
 PAGES = (
     "Overview",
@@ -106,17 +112,73 @@ def _render(page: str, app: AtlasApplication) -> None:
         _methodology(app)
 
 
+GROUPS = (
+    (
+        "What it spent",
+        ("net investment in fixed assets", "capex intensity", "capex to depreciation"),
+    ),
+    (
+        "What it earns on that capital",
+        (
+            "return on invested capital (operating basis)",
+            "return on invested capital (excluding cash)",
+            "net operating profit after tax",
+            "invested capital (operating basis)",
+            "invested capital (excluding cash)",
+        ),
+    ),
+    (
+        "Cash generation",
+        (
+            "free cash flow (reported basis)",
+            "free cash flow (lease-adjusted)",
+            "free cash flow (standardized)",
+        ),
+    ),
+)
+"""Published values grouped by the question they answer.
+
+Bundle order puts three competing free-cash-flow definitions first, before a
+reader knows what the company spent. Any label not listed here still renders,
+under 'Other', so adding a metric cannot silently drop it from the page.
+"""
+
+
 def _overview(app: AtlasApplication) -> None:
     st.title(f"{app.bundle.entity_id} · {app.bundle.period_label}")
+    st.caption(
+        "Capital deployment, reconstructed from the filings and traceable back to them. "
+        "Every figure carries a mark for how much evidence stands behind it."
+    )
+
+    headline = app.headline()
+    card_grid(headline, columns=4)
+    figure = app.figure("capex_vs_depreciation")
+    if figure is not None:
+        st.plotly_chart(figure, width="stretch")
+
+    st.divider()
     status_legend(app.evidence_mix())
-    mix = app.figure("evidence_mix")
-    if mix is not None:
-        st.plotly_chart(mix, use_container_width=True)
-    cards = app.overview()
-    for row in range(0, len(cards), 3):
-        for column, card in zip(st.columns(3), cards[row : row + 3], strict=False):
-            with column:
-                metric_card(card)
+    # A figure in the headline is not repeated below it. The filter is on the
+    # labels rather than hardcoded so changing headline() cannot reintroduce a
+    # duplicate.
+    shown = {card.label for card in headline}
+    grouped = {label for _, labels in GROUPS for label in labels}
+    for heading, labels in GROUPS:
+        cards = [
+            card
+            for card in (app.card(label) for label in labels)
+            if card is not None and card.label not in shown
+        ]
+        if cards:
+            st.subheader(heading)
+            card_grid(cards)
+    remaining = [
+        card for card in app.overview() if card.label not in grouped and card.label not in shown
+    ]
+    if remaining:
+        st.subheader("Other")
+        card_grid(remaining)
 
 
 def _capital(app: AtlasApplication) -> None:
@@ -125,14 +187,12 @@ def _capital(app: AtlasApplication) -> None:
         "Cash spending against the depreciation of the existing base. Above one means "
         "the asset base is growing in nominal terms."
     )
-    for label in ("capex to depreciation", "net investment in fixed assets", "capex intensity"):
-        card = app.card(label)
-        if card:
-            metric_card(card)
+    labels = ("capex to depreciation", "net investment in fixed assets", "capex intensity")
+    card_grid([card for card in (app.card(label) for label in labels) if card is not None])
 
     figure = app.figure("capex_vs_depreciation")
     if figure is not None:
-        st.plotly_chart(figure, use_container_width=True)
+        st.plotly_chart(figure, width="stretch")
         st.caption(
             "Annual periods only. Mixing quarters with year-to-date figures on one axis "
             "produces a sawtooth that looks like a business collapsing four times a year."
@@ -167,13 +227,61 @@ def _simulator(app: AtlasApplication) -> None:
     )
 
     with st.form("scenario"):
-        spend = st.number_input("Server spend (USD millions)", value=10_000, step=500)
-        life = st.number_input("Useful life (years)", value=6, min_value=1, max_value=40)
-        lead = st.number_input("Lead time (years)", value=0, min_value=0, max_value=10)
-        yield_rate = st.slider("Revenue per unit of capital, at full utilization", 0.05, 1.0, 0.45)
-        margin = st.slider("Cash operating margin", 0.05, 0.95, 0.55)
-        utilization = st.slider("Steady-state utilization", 0.05, 1.0, 0.85)
-        payback_target = st.number_input("Payback claim to test (years)", value=3, min_value=1)
+        left, right = st.columns(2)
+        with left:
+            spend = st.number_input(
+                "Server spend ($B)",
+                value=10.0,
+                min_value=0.1,
+                step=1.0,
+                help="Cash committed to this vintage, in billions of dollars.",
+            )
+            life = st.number_input(
+                "Useful life (years)",
+                value=6,
+                min_value=1,
+                max_value=40,
+                help="How long the hardware is depreciated over. Hyperscalers have "
+                "extended server lives repeatedly, which flatters reported margins.",
+            )
+            lead = st.number_input(
+                "Lead time (years)",
+                value=0,
+                min_value=0,
+                max_value=10,
+                help="Delay between the cash going out and the capacity earning. "
+                "Power and shell construction dominate it.",
+            )
+            payback_target = st.number_input(
+                "Payback claim to test (years)",
+                value=3,
+                min_value=1,
+                help="The claim the solver works backwards from.",
+            )
+        with right:
+            yield_rate = st.slider(
+                "Revenue per $1 of capital, at full utilization",
+                0.05,
+                1.0,
+                0.45,
+                help="0.45 means a dollar of hardware earns 45 cents of revenue a year "
+                "when fully used.",
+            )
+            margin = st.slider(
+                "Cash operating margin",
+                0.05,
+                0.95,
+                0.55,
+                help="Share of that revenue left after cash operating costs, before "
+                "depreciation and tax.",
+            )
+            utilization = st.slider(
+                "Steady-state utilization",
+                0.05,
+                1.0,
+                0.85,
+                help="Share of the capacity actually sold once the ramp is done.",
+            )
         submitted = st.form_submit_button("Run scenario")
 
     if not submitted:
@@ -187,7 +295,10 @@ def _simulator(app: AtlasApplication) -> None:
         asset_classes=(
             AssetClassParameters(
                 asset_class=CapitalCategory.SERVERS,
-                spend=Decimal(str(spend)),
+                # Scaled to dollars here. The engine's outputs declare their unit as
+                # USD, so feeding it billions would label a billion-dollar NPV as
+                # though it were a hundred and sixty-two dollars.
+                spend=Decimal(str(spend)) * PER_BILLION,
                 lead_time_years=Decimal(str(lead)),
                 useful_life_years=Decimal(str(life)),
                 utilization_ramp=(Decimal(str(utilization)),),
@@ -217,9 +328,16 @@ def _simulator(app: AtlasApplication) -> None:
     )
 
     left, middle, right = st.columns(3)
-    left.metric(f"{result.npv.status.glyph} Net present value", result.npv.formatted)
-    middle.metric(f"{result.irr.status.glyph} Internal rate of return", result.irr.formatted)
-    right.metric(f"{result.payback.status.glyph} Payback", result.payback.formatted)
+    for column, name, value in (
+        (left, "Net present value", result.npv),
+        (middle, "Internal rate of return", result.irr),
+        (right, "Payback", result.payback),
+    ):
+        column.metric(
+            f"{value.status.glyph} {name}",
+            format_compact(value.value, value.unit),
+            help=value.formatted,
+        )
     st.caption(evidence_badge(result.status))
 
     st.subheader("What must be true")
@@ -231,11 +349,10 @@ def _simulator(app: AtlasApplication) -> None:
 
     st.subheader("What the answer rests on")
     for band in result.sensitivities:
-        swing = "—" if band.swing is None else f"{band.swing:,.0f}"
-        st.write(f"**{band.lever}** ({band.low_input} to {band.high_input}) moves value by {swing}")
+        st.write(sensitivity_line(band))
 
     st.subheader("Cash flow by year")
-    st.plotly_chart(app.scenario_figure(result), use_container_width=True)
+    st.plotly_chart(app.scenario_figure(result), width="stretch")
 
 
 def _provenance(app: AtlasApplication) -> None:

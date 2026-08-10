@@ -11,7 +11,9 @@ from collections.abc import Sequence
 import streamlit as st
 
 from capex_atlas.application import MetricCard, ProvenanceNode
+from capex_atlas.capital_vintages.solver import LEVER_TITLES, LEVER_UNITS, SensitivityBand
 from capex_atlas.disclaimer import SHORT
+from capex_atlas.schemas.decimals import format_compact, format_value
 from capex_atlas.schemas.evidence import EvidenceStatus
 from capex_atlas.schemas.source import SourceReference
 
@@ -29,19 +31,32 @@ def evidence_badge(status: EvidenceStatus) -> str:
     return f"{status.glyph} {status.value}"
 
 
-def metric_card(card: MetricCard) -> None:
-    """One headline figure with its standing and formula visible, not hidden."""
+def metric_card(card: MetricCard, *, show_formula: bool = False) -> None:
+    """One headline figure, compact on its face and exact in its tooltip.
+
+    The formula is off by default. It is the same string the Provenance page
+    renders in full, and repeating it under every card in grey monospace wraps
+    raggedly and crowds out the figure it is meant to support.
+    """
     st.metric(
-        label=f"{card.glyph} {card.label}",
-        value=card.formatted,
-        help=STATUS_HELP[card.status],
+        label=f"{card.glyph} {card.title}",
+        value=card.display,
+        help=f"{card.formatted}\n\n{STATUS_HELP[card.status]}",
     )
     caption = [evidence_badge(card.status)]
     if card.period_label:
         caption.append(card.period_label)
-    if card.formula:
+    if show_formula and card.formula:
         caption.append(f"`{card.formula}`")
     st.caption(" · ".join(caption))
+
+
+def card_grid(cards: Sequence[MetricCard], *, columns: int = 3) -> None:
+    """Cards laid out in rows, so a wide screen is not mostly whitespace."""
+    for row in range(0, len(cards), columns):
+        for column, card in zip(st.columns(columns), cards[row : row + columns], strict=False):
+            with column:
+                metric_card(card)
 
 
 def status_legend(counts: dict[EvidenceStatus, int]) -> None:
@@ -56,18 +71,23 @@ def status_legend(counts: dict[EvidenceStatus, int]) -> None:
 
 
 def provenance_tree(nodes: Sequence[ProvenanceNode]) -> None:
-    """A value's lineage, indented by depth."""
+    """A value's lineage, indented by depth, bottoming out in reported facts.
+
+    Calculations show their formula; leaves show the XBRL tag and the period, so
+    the last line of any chain is something a company actually filed.
+    """
     if not nodes:
         st.info("No calculation graph recorded for this value.")
         return
     for node in nodes:
         indent = "&nbsp;" * (node.depth * 4)
-        shown = "—" if node.result is None else f"{node.result:,f}"
-        st.markdown(
-            f"{indent}{node.status.glyph} **{node.metric_id}** = {shown} {node.unit}  \n"
-            f"{indent}<span style='color:#666;font-size:0.85em'>{node.formula}</span>",
-            unsafe_allow_html=True,
-        )
+        shown = format_value(node.result, node.unit)
+        name = node.concept if node.is_fact else node.metric_id
+        detail = node.period_label if node.is_fact else node.formula
+        line = f"{indent}{node.status.glyph} **{name}** = {shown}"
+        if detail:
+            line += f"  \n{indent}<span style='color:#666;font-size:0.85em'>{detail}</span>"
+        st.markdown(line, unsafe_allow_html=True)
 
 
 def source_list(sources: Sequence[SourceReference]) -> None:
@@ -82,6 +102,20 @@ def source_list(sources: Sequence[SourceReference]) -> None:
             st.markdown(f"- [{line}]({source.url})")
         else:
             st.markdown(f"- {line}")
+
+
+def sensitivity_line(band: SensitivityBand, *, unit: str = "USD") -> str:
+    """One tornado bar as a sentence.
+
+    The raw form printed the enum name and a bare number: ``revenue_yield
+    (0.2 to 0.7) moves value by 9,781``, which says neither what the lever is
+    nor what the swing is denominated in.
+    """
+    lever_unit = LEVER_UNITS[band.lever]
+    low = format_compact(band.low_input, lever_unit)
+    high = format_compact(band.high_input, lever_unit)
+    swing = "—" if band.swing is None else format_compact(band.swing, unit)
+    return f"**{LEVER_TITLES[band.lever].capitalize()}** · {low} → {high} swings NPV by {swing}"
 
 
 def assumption_panel(assumption_ids: Sequence[str]) -> None:

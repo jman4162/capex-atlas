@@ -20,6 +20,8 @@ from decimal import Decimal
 from typing import Any
 from xml.sax.saxutils import escape
 
+from capex_atlas.schemas.decimals import compact_magnitude
+
 WIDTH = 900
 HEIGHT = 460
 MARGIN_LEFT = 96
@@ -236,11 +238,11 @@ def _wrap(text: str, width: int) -> list[str]:
 
 
 def _compact(value: float) -> str:
-    """Axis labels a reader can take in, without implying false precision."""
-    magnitude = abs(value)
-    for limit, suffix in ((1e12, "T"), (1e9, "B"), (1e6, "M"), (1e3, "k")):
-        if magnitude >= limit:
-            return f"{value / limit:.1f}{suffix}"
-    if magnitude < 1 and magnitude > 0:
-        return f"{Decimal(str(round(value, 3))).normalize():f}"
-    return f"{value:.0f}"
+    """Axis labels a reader can take in, without implying false precision.
+
+    Delegates to the shared magnitude formatter so a tick and the card above it
+    round identically; the axis carries its unit in the label, so no currency
+    prefix here.
+    """
+    sign = "-" if value < 0 else ""
+    return f"{sign}{compact_magnitude(abs(Decimal(str(value))))}"

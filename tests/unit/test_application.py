@@ -174,3 +174,72 @@ def test_loading_from_a_stored_bundle_is_offline(app: AtlasApplication, tmp_path
     reopened = AtlasApplication.from_path(path)
     assert reopened.bundle.entity_id == "GOOGL"
     assert len(reopened.overview()) == len(app.overview())
+
+
+class TestTheProvenanceTreeReachesTheFilings:
+    """The page promises 'the formula, the inputs and the filings beneath it'.
+
+    It used to render one row and stop, because ``_walk`` descended only into
+    calculation nodes while every leaf input is a fact the bundle stores
+    separately.
+    """
+
+    def test_a_calculation_bottoms_out_in_reported_facts(self, app: AtlasApplication):
+        nodes = app.lineage("free cash flow (reported basis)")
+        assert len(nodes) > 1, "a formula with inputs must show them"
+        leaves = [node for node in nodes if node.is_fact]
+        assert {leaf.concept for leaf in leaves} == {
+            "NetCashProvidedByUsedInOperatingActivities",
+            "PaymentsToAcquirePropertyPlantAndEquipment",
+        }
+
+    def test_leaves_are_reported_and_carry_their_period(self, app: AtlasApplication):
+        leaves = [n for n in app.lineage("free cash flow (reported basis)") if n.is_fact]
+        assert all(leaf.status is EvidenceStatus.REPORTED for leaf in leaves)
+        assert all(leaf.period_label for leaf in leaves)
+
+    def test_leaves_sit_below_the_calculation_that_used_them(self, app: AtlasApplication):
+        nodes = app.lineage("free cash flow (reported basis)")
+        assert nodes[0].is_fact is False
+        assert all(leaf.depth > nodes[0].depth for leaf in nodes if leaf.is_fact)
+
+    def test_an_input_the_bundle_no_longer_carries_is_skipped(self, app: AtlasApplication):
+        """A pruned fact costs one row, not the page."""
+        stripped = AtlasApplication(app.bundle.model_copy(update={"facts": ()}))
+        nodes = stripped.lineage("free cash flow (reported basis)")
+        assert [node.metric_id for node in nodes] == ["fcf.reported"]
+
+
+class TestTheHeadline:
+    def test_it_leads_with_the_spending_itself(self, app: AtlasApplication):
+        titles = [card.title for card in app.headline()]
+        assert titles[:2] == ["Capital expenditure", "Depreciation"]
+
+    def test_it_is_the_only_place_a_reported_figure_appears(self, app: AtlasApplication):
+        # Every published value is a calculation, so without this the interface
+        # never shows a ● despite being built to distinguish one.
+        assert not any(c.status is EvidenceStatus.REPORTED for c in app.overview())
+        assert any(c.status is EvidenceStatus.REPORTED for c in app.headline())
+
+    def test_money_is_compact_and_ratios_are_percentages(self, app: AtlasApplication):
+        shown = {card.title: card.display for card in app.headline()}
+        assert shown["Capital expenditure"] == "$91.4B"
+        assert shown["Capex intensity"] == "22.7%"
+        assert shown["Capex to depreciation"] == "4.3×"
+
+    def test_the_exact_figure_is_still_available(self, app: AtlasApplication):
+        capex = next(c for c in app.headline() if c.title == "Capital expenditure")
+        assert capex.formatted == "91,447,000,000.00 USD"
+
+
+class TestCardTitles:
+    def test_the_lookup_key_is_never_rewritten(self, app: AtlasApplication):
+        """Titles are display only. ``bundle.value()`` matches the label exactly,
+        so retitling in place would silently return nothing."""
+        for card in app.overview():
+            assert app.card(card.label) is not None
+
+    def test_abbreviations_are_spelled_the_way_a_reader_writes_them(self, app: AtlasApplication):
+        titles = {card.title for card in app.overview()}
+        assert "ROIC (operating basis)" in titles
+        assert "NOPAT" in titles

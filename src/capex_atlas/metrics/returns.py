@@ -81,7 +81,7 @@ def invested_capital_ex_cash(
     metric_id="returns.roic",
     version="1.0.0",
     formula="NOPAT / invested capital",
-    unit="ratio",
+    unit="percent",
     label="return on invested capital",
 )
 def roic(nopat_value: Decimal, invested_capital: Decimal) -> Decimal:
@@ -98,7 +98,7 @@ def roic(nopat_value: Decimal, invested_capital: Decimal) -> Decimal:
     metric_id="returns.roic_average_capital",
     version="1.0.0",
     formula="NOPAT / ((opening invested capital + closing invested capital) / 2)",
-    unit="ratio",
+    unit="percent",
     label="return on average invested capital",
     allow_mixed_periods=True,
 )
@@ -118,7 +118,7 @@ def roic_on_average_capital(
         "(operating income + R&D expense - R&D amortization) * (1 - tax rate) "
         "/ (invested capital + capitalized R&D asset)"
     ),
-    unit="ratio",
+    unit="percent",
     label="return on invested capital (R&D capitalized)",
 )
 def roic_rd_capitalized(
@@ -145,7 +145,7 @@ def roic_rd_capitalized(
     metric_id="returns.incremental_roic",
     version="1.0.0",
     formula="(NOPAT_t - NOPAT_{t-n}) / (invested capital_{t-1} - invested capital_{t-n-1})",
-    unit="ratio",
+    unit="percent",
     label="incremental return on invested capital",
     allow_mixed_periods=True,
 )

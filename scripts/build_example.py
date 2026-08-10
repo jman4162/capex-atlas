@@ -49,7 +49,11 @@ def illustrative_scenario() -> ScenarioDefinition:
         asset_classes=(
             AssetClassParameters(
                 asset_class=CapitalCategory.SERVERS,
-                spend=Decimal(10_000),
+                # Ten billion dollars, the scale a hyperscaler actually commits to
+                # one vintage. Return, payback and the sensitivity ordering do not
+                # depend on it, but a net present value of $1.2k sitting under
+                # $91.4B of capex invites the reader to mistrust the units.
+                spend=Decimal("1e10"),
                 lead_time_years=Decimal(0),
                 # The one parameter here taken from a filing rather than chosen.
                 useful_life_years=Decimal(6),
@@ -94,9 +98,10 @@ def build() -> Path:
         entity_id=ENTITY,
         period_label=PERIOD,
         source=SourceReference(kind=SourceKind.SEC_FILING, url=SOURCE_URL),
-        # 'period' keeps the example small enough to review in a pull request
-        # while still carrying everything the published figures rest on.
-        facts_scope=FactScope.PERIOD,
+        # 'annual' rather than 'period': with only the analyzed period the charts
+        # degenerate to a single point. Quarterly facts stay out because no chart
+        # plots them and they would triple the file.
+        facts_scope=FactScope.ANNUAL,
         scenarios=(scenario,),
         command="python scripts/build_example.py",
     )

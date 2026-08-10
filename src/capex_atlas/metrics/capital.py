@@ -17,7 +17,7 @@ from capex_atlas.provenance.metric import INHERIT, metric
     metric_id="capex.intensity",
     version="1.0.0",
     formula="purchases of property and equipment / revenue",
-    unit="ratio",
+    unit="percent",
     label="capex intensity",
 )
 def capex_intensity(capital_expenditure: Decimal, revenue: Decimal) -> Decimal:
@@ -64,7 +64,7 @@ def net_investment(capital_expenditure: Decimal, depreciation: Decimal) -> Decim
     metric_id="capital.depreciation_lag",
     version="1.0.0",
     formula="depreciation / purchases of property and equipment",
-    unit="ratio",
+    unit="percent",
     label="depreciation coverage of capex",
 )
 def depreciation_coverage(depreciation: Decimal, capital_expenditure: Decimal) -> Decimal:

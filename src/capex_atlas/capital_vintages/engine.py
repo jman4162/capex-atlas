@@ -136,7 +136,7 @@ def _npv_metric(cash_flows: object, discount_rate: Decimal) -> Decimal | None:
     metric_id="vintage.irr",
     version="1.0.0",
     formula="rate where sum(free cash flow_t / (1 + rate)^t) = 0",
-    unit="ratio",
+    unit="percent",
     label="vintage internal rate of return",
 )
 def _irr_metric(cash_flows: object) -> Decimal | None:

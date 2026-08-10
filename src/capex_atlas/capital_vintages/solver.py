@@ -16,6 +16,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
+from typing import Final
 
 from capex_atlas.capital_vintages.engine import build_schedule
 from capex_atlas.capital_vintages.model import AssetClassParameters
@@ -25,6 +26,7 @@ from capex_atlas.numerics import (
     payback_period,
     solve_for_root,
 )
+from capex_atlas.schemas.decimals import format_compact
 from capex_atlas.schemas.evidence import EvidenceStatus
 
 
@@ -45,6 +47,36 @@ class Target(StrEnum):
     NPV_BREAKEVEN = "npv_breakeven"
 
 
+LEVER_TITLES: Final = {
+    Lever.UTILIZATION: "utilization",
+    Lever.REVENUE_YIELD: "revenue yield",
+    Lever.OPERATING_MARGIN: "operating margin",
+    Lever.LEAD_TIME: "lead time",
+}
+"""Readable names. The enum values are identifiers and read as such in a sentence."""
+
+LEVER_UNITS: Final = {
+    Lever.UTILIZATION: "percent",
+    Lever.REVENUE_YIELD: "ratio",
+    Lever.OPERATING_MARGIN: "percent",
+    Lever.LEAD_TIME: "years",
+}
+"""Utilization and margin are shares of a whole. Revenue yield is revenue per unit
+of capital, which is a rate rather than a share, so it stays a bare ratio."""
+
+TARGET_TITLES: Final = {
+    Target.PAYBACK_YEARS: "payback",
+    Target.IRR: "IRR",
+    Target.NPV_BREAKEVEN: "NPV breakeven",
+}
+
+TARGET_UNITS: Final = {
+    Target.PAYBACK_YEARS: "years",
+    Target.IRR: "percent",
+    Target.NPV_BREAKEVEN: "USD",
+}
+
+
 @dataclass(frozen=True)
 class RequirementResult:
     """What a lever must reach for a claim to hold."""
@@ -63,16 +95,18 @@ class RequirementResult:
         return self.required is not None
 
     def describe(self) -> str:
+        lever = LEVER_TITLES[self.lever]
+        lever_unit = LEVER_UNITS[self.lever]
+        wanted = format_compact(self.target_value, TARGET_UNITS[self.target])
+        claim = f"{TARGET_TITLES[self.target]} of {wanted}"
         if self.required is None:
+            low = format_compact(self.searched_low, lever_unit)
+            high = format_compact(self.searched_high, lever_unit)
             return (
-                f"No {self.lever.value} between {self.searched_low} and {self.searched_high} "
-                f"reaches {self.target.value} of {self.target_value}. On these assumptions the "
+                f"No {lever} between {low} and {high} reaches {claim}. On these assumptions the "
                 "claim cannot hold anywhere in the plausible range."
             )
-        return (
-            f"{self.lever.value} of {self.required:.4f} is required for "
-            f"{self.target.value} of {self.target_value}."
-        )
+        return f"A {lever} of {format_compact(self.required, lever_unit)} is required for {claim}."
 
 
 def _with_lever(

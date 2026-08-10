@@ -17,6 +17,7 @@ from typer.testing import CliRunner
 from capex_atlas.bundle import FactScope, build_analysis, content_only, write_bundle
 from capex_atlas.cli import main as cli
 from capex_atlas.cli.main import app
+from capex_atlas.schemas.period import PeriodKind
 from capex_atlas.schemas.source import SourceKind, SourceReference
 from capex_atlas.sources.raw import RawStore
 from capex_atlas.sources.sec import SecClient
@@ -228,3 +229,43 @@ class TestTheAppCommand:
         assert result.exit_code == 0
         assert seen["command"][:2] == ["streamlit", "run"]
         assert "--bundle" in seen["command"]
+
+
+class TestTheAnnualScope:
+    """History without the quarters.
+
+    The charts plot annual periods only, so carrying every quarterly fact
+    tripled the example for nothing drawn. 'annual' is the scope that matches
+    what a bundle's charts actually consume.
+    """
+
+    @staticmethod
+    def scoped(scope: FactScope):  # type: ignore[no-untyped-def]
+        return build_analysis(
+            json.loads(FIXTURE.read_text()),
+            entity_id="GOOGL",
+            period_label="2025FY",
+            source=SourceReference(kind=SourceKind.SEC_FILING, url="https://x"),
+            facts_scope=scope,
+        )
+
+    def test_it_keeps_no_quarterly_facts(self):
+        kinds = {fact.period.kind for fact in self.scoped(FactScope.ANNUAL).facts}
+        assert kinds <= {PeriodKind.FISCAL_YEAR, PeriodKind.INSTANT}
+
+    def test_it_keeps_balance_sheet_dates(self):
+        # Instants have no duration, so a naive 'annual' filter would drop
+        # invested capital out of the history entirely.
+        kinds = {fact.period.kind for fact in self.scoped(FactScope.ANNUAL).facts}
+        assert PeriodKind.INSTANT in kinds
+
+    def test_it_sits_between_period_and_all(self):
+        counts = {
+            scope: len(self.scoped(scope).facts)
+            for scope in (FactScope.PERIOD, FactScope.ANNUAL, FactScope.ALL)
+        }
+        assert counts[FactScope.PERIOD] < counts[FactScope.ANNUAL] < counts[FactScope.ALL]
+
+    def test_it_still_carries_several_years(self):
+        years = {fact.period.fiscal_year for fact in self.scoped(FactScope.ANNUAL).facts}
+        assert len(years) >= 3, "a chart needs a run of periods to draw a line"

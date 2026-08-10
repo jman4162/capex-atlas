@@ -102,3 +102,37 @@ class TestFooter:
         )
         texts = [a["text"] for a in render(spec, DATA)["layout"]["annotations"]]
         assert "guidance raised" in texts
+
+
+class TestAThinBundleStillReads:
+    """A timeline with one point drew two specks in an empty frame.
+
+    The example carried only the analyzed period for most of v0.2, so the
+    capital-deployment chart looked broken rather than sparse.
+    """
+
+    def test_one_point_is_drawn_as_a_bar(self):
+        spec = ChartSpec(
+            chart_id="thin",
+            title="One period",
+            chart_type=ChartType.CAPEX_COMPOSITION_TIMELINE,
+            x_field="period",
+            y_fields=("capex",),
+            unit="USD",
+            data_ref="thin",
+        )
+        figure = render(spec, {"period": ["2025FY"], "capex": [Decimal(1)]})
+        assert figure["data"][0]["type"] == "bar"
+
+    def test_a_real_run_is_still_a_line(self):
+        spec = ChartSpec(
+            chart_id="thick",
+            title="Three periods",
+            chart_type=ChartType.CAPEX_COMPOSITION_TIMELINE,
+            x_field="period",
+            y_fields=("capex",),
+            unit="USD",
+            data_ref="thick",
+        )
+        data = {"period": ["2023FY", "2024FY", "2025FY"], "capex": [Decimal(i) for i in (1, 2, 3)]}
+        assert render(spec, data)["data"][0]["type"] == "scatter"
