@@ -73,9 +73,20 @@ Add the PyPI and Python-version badges to the README. They sit in an HTML commen
 The lab can be deployed from <https://share.streamlit.io>:
 
 - Repository `jman4162/capex-atlas`, branch `main`, main file path `streamlit_app.py`.
-- Cloud reads the root `requirements.txt`, which installs `.[app]`. It ignores pyproject extras,
+- Cloud reads the root `requirements.txt`, which installs `-e .[app]`. It ignores pyproject extras,
   which is why that file exists.
 - Cloud cannot pass command-line arguments, so the deployed app opens the example bundle shipped in
   the package. `capex-atlas app --bundle <path>` is the way to open a different one locally.
+
+**Reboot the app after any commit that changes `src/`.** On a push Cloud logs `🔄 Updated app!` and
+hot-swaps the page code without restarting the Python process, so modules already in `sys.modules`
+stay at the build they were imported from and `@st.cache_resource` keeps objects of the old classes.
+A commit that changes a page and the service layer together therefore deploys a page calling a
+library that predates it, and the app dies on an `ImportError` or an `AttributeError` at startup.
+Manage app → ⋮ → Reboot app forces a clean install and a fresh interpreter.
+
+Two things reduce the blast radius but do not remove it: `requirements.txt` is editable, so a
+rebuild always picks up the checkout, and `streamlit_app.py` puts `src/` ahead of site-packages, so
+a fresh process cannot import a stale copy. Neither helps a process that is already running.
 
 Once it is live, add the Streamlit badge to the README next to the others.
