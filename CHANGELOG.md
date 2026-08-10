@@ -4,44 +4,104 @@ Changes per release, most recent first. Dates are release dates.
 
 ## Unreleased
 
+Two strands. An external review found seven P1 integrity defects, all of which
+reproduced and two of which were producing wrong published numbers. Separately,
+the Streamlit lab was rewritten to be readable.
+
 ### Fixed
 
-- The vintage simulator asked for spend in millions and handed the number to the engine unscaled,
-  while the engine declares its outputs in USD. A $10 billion program reported a net present value
-  of `-162.21 USD`; it meant `-$162.2M`. The form now takes billions and scales before the call,
-  and a test pins the magnitude of the answer.
-- Return on invested capital, capex intensity, IRR and the other three ratio metrics were declared
-  `unit="ratio"` and rendered as bare decimals: `0.206971` rather than `20.70%`. They are now
-  `unit="percent"`. The percent branch of `format_value` had never been reachable, and rounded to
-  six places rather than the two `PERCENT_PLACES` specified, so both are fixed.
-- The Provenance page promised "the formula, the inputs and the filings beneath it" and rendered a
-  single row. `_walk` descended only into calculation nodes, and every leaf input is a fact stored
-  separately in the bundle. Lineage now bottoms out in reported facts with their XBRL tag and
-  period. An input the bundle no longer carries costs one row rather than the page.
-- `use_container_width` is past its Streamlit removal date; charts now pass `width="stretch"`.
+- **The what-must-be-true solver answered wrongly in both directions.** It
+  searched for the lever value where an error term crossed zero, which assumes
+  the objective reaches the target continuously; payback steps. On the lab's
+  default settings it reported that 67.3% utilization gives a three-year payback,
+  where 67.3% gives five years and nothing in range gives three. It also refused
+  achievable claims, because payback can jump from never to four years and skip
+  five entirely. `required_for` now searches a monotone predicate, so the value it
+  returns satisfies the claim by construction, and knows which direction each
+  lever helps in. The committed example and the README both carried a false
+  refusal: no utilization was said to reach a three-year payback, when 80.9% does.
+- **Node ids collided on keyword order.** `subtract(a=x, b=y)` and
+  `subtract(b=x, a=y)` produced one id for results of 7 and -7, because the
+  kernel read `kwargs.values()`, which follows call-site order and carries no
+  names. Arguments now bind through the signature. Every stored node id is
+  unchanged, and pinned by a test.
+- **Fractional asset lives were truncated.** A 5.5-year asset was written down to
+  90.9% of cost; 5.9 years recovered less than 5.0; a life under a year meant the
+  asset never entered service at all, silently. The final partial year is
+  prorated. Fractional lead times are refused rather than rounded.
+- **The audit could not detect tampering.** It checked that identifiers resolved,
+  never that they agreed. An edited amount, unit, period or label passed, as did
+  a value repointed at a different real node. Values are now compared with their
+  calculations, and node ids re-derived from their inputs.
+- **Failed reconciliation did not stop publication.** A trillion added to Assets
+  gave fourteen failed identities, a published invested-capital figure a trillion
+  out, and a clean audit. Failures are audit errors, and `analyze` refuses to
+  write without `--allow-failed-reconciliation`.
+- **Scenario assumptions were nominal.** Only the tuple's emptiness was checked,
+  so a single blank string satisfied it, and the shipped example cited
+  `useful_life.servers_and_network.googl`, which resolves in no registry -- with a
+  test asserting that exact string. Ids must resolve, and bundles now carry the
+  assumptions their scenarios name.
+- **The SEC cache never refreshed.** The first download was served forever, with
+  no age check and no way to ask for a new one. `--refresh`, `--max-age` and
+  `--offline` on `ingest`, `analyze` and `reconcile`.
+- **`reconcile` skipped the checks it advertised.** It passed canonical concept
+  names to a matcher keyed on XBRL tags, so all twenty year-to-date checks
+  matched nothing and were reported as skipped for want of data. Fourteen checks
+  ran where thirty-four should have.
+- **The simulator was off by a factor of a million.** It asked for spend in
+  millions and handed the number to an engine that declares its outputs in USD, so
+  a $10 billion program reported a net present value of `-162.21 USD`. It meant
+  `-$162.2M`.
+- Return on invested capital, capex intensity, IRR and three other metrics were
+  declared `unit="ratio"` and rendered as bare decimals: `0.206971` rather than
+  `20.70%`. The percent branch of `format_value` had never been reachable, and
+  rounded to six places rather than the two `PERCENT_PLACES` specified.
+- The Provenance page promised "the formula, the inputs and the filings beneath
+  it" and rendered a single row, because the walk descended only into calculation
+  nodes and every leaf is a fact. Lineage now bottoms out in the filings.
+- Cumulative operating cash flow is not monotonic -- a cash-negative quarter
+  reverses it legitimately -- so a decrease is reported as suspect rather than
+  failing the report.
+- An unavailable `--through` period names the periods that exist instead of
+  raising `UnitMismatchError` about a metric's units.
+- `use_container_width` is past its Streamlit removal date; charts pass
+  `width="stretch"`.
 
 ### Added
 
-- `format_compact` renders `$73.3B` where `format_value` renders `73,266,000,000.00 USD`. Cards and
-  axis labels use the compact form and keep the exact one in the tooltip. The SVG axis labeller
-  delegates to the same helper, so a tick and the card above it cannot disagree.
-- `AtlasApplication.headline()`: capex and depreciation as reported facts, with the two ratios built
-  from them. Alphabet's $91.4B of capital spending appeared on no page, and because every published
-  value is a calculation the interface never displayed a single ● reported figure.
-- `FactScope.ANNUAL` keeps annual periods and balance-sheet dates, dropping quarters. The charts plot
-  annual figures only, so `all` tripled the example for nothing drawn.
-- A timeline with fewer than three points renders as bars. The example carried only the analyzed
-  period, so the capital-deployment chart drew two specks in an empty frame.
+- `AssetClassParameters` validates its economics. Negative spend produced a
+  positive net present value; utilization above 100%, non-positive lives and
+  margins above 1 all constructed.
+- `CalculationNode.literal_inputs` records the bare arguments that went into a
+  node id, so the id can be verified from the node.
+- Property-based tests over the solver. Hypothesis was a declared dev dependency
+  with no uses; the first two properties written found the step-discontinuity
+  failure.
+- Bundles reject a schema version they cannot read. Restatements keep concept,
+  values and both accessions rather than a count.
+- CI has a coverage floor, a 3.12/3.13 matrix, and a dependency audit.
+- `format_compact` renders `$73.3B` where `format_value` renders
+  `73,266,000,000.00 USD`. The SVG axis labeller shares it, so a tick and the card
+  above it cannot disagree.
+- `AtlasApplication.headline()`: capex and depreciation as reported facts.
+  Alphabet's $91.4B of capital spending appeared on no page, and because every
+  published value is a calculation the interface never showed a single ● figure.
+- `FactScope.ANNUAL` keeps annual periods and balance-sheet dates, dropping
+  quarters no chart plots.
+- A timeline with fewer than three points renders as bars, so a thin bundle reads
+  as sparse rather than broken.
 
 ### Changed
 
-- The Overview leads with what the company spent, then groups the published values under what they
-  answer, rather than listing all eleven in bundle order behind a bar chart counting the app's own
-  figures. The evidence mix stays as a one-line caption.
-- Requirement prose reads `A utilization of 67.3% is required for payback of 3.0 years` rather than
-  `utilization of 0.6734 is required for payback_years of 3`.
+- The Overview leads with what the company spent, then groups the published
+  values by the question they answer, rather than listing eleven in bundle order
+  behind a bar chart counting the app's own figures.
+- Requirement prose names its lever in words: `A utilization of 80.9% is required
+  for payback of 3.0 years` rather than `utilization of 0.8086 is required for
+  payback_years of 3`.
 - The simulator's inputs sit in two columns with help text on each.
-- The committed example is rebuilt with the annual scope: 161 facts, 204 KB.
+- The committed example is rebuilt with the annual scope.
 
 ## 0.2.0 — 2026-08-09
 
