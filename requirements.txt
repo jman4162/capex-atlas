@@ -1,5 +1,12 @@
 # Streamlit Community Cloud only. Cloud reads this file and ignores pyproject
 # extras, so it is the shim that installs the package plus its app dependencies.
 #
+# Editable, and not merely `.[app]`, because Cloud serves `apps/streamlit/` from
+# the checkout while importing `capex_atlas` from site-packages. A plain install
+# copies the library, so a commit that changes both leaves the page running
+# against the previous build and the app dies on an import that exists in the
+# repo it was deployed from. Editable makes the installed package the checkout,
+# so the two cannot drift.
+#
 # For development use `uv sync --group dev`; for library use `pip install capex-atlas`.
-.[app]
+-e .[app]
