@@ -2,7 +2,12 @@
 
 Changes per release, most recent first. Dates are release dates.
 
-## Unreleased
+## 0.2.0 — 2026-08-09
+
+First release published to PyPI. The version skips 0.1.1 because the surface changed:
+`UnsupportedEntityError` moved to `capex_atlas.adapters`, the adapter registry is now typed to the
+`CompanyAdapter` protocol and adapters must implement `cumulative_concepts()`, `AtlasEvent` and the
+`[xbrl]` extra are gone, and `duckdb` and `platformdirs` are no longer dependencies.
 
 ### Fixed
 
@@ -24,6 +29,22 @@ Changes per release, most recent first. Dates are release dates.
   shared code. Adding a company is now a new module and one registry entry.
 - The cross-company symmetry check now constrains rather than returning early, and allows a
   filer-specific parameter only when that filer's own filing discloses it.
+- Chart specifications are carried by bundles and rendered by both the app and a dependency-free,
+  byte-deterministic SVG writer, which produces the committed README figures. The chart grammar had
+  no caller in 0.1.0.
+- `capex-atlas app` launches the lab, and the wheel ships it alongside a worked example, so
+  `pip install "capex-atlas[app]"` works without a git checkout.
+- `py.typed`, so downstream consumers get the annotations the package is already checked against.
+- A tag-triggered release workflow using PyPI trusted publishing, which installs its own wheel into
+  a clean environment before publishing.
+
+### Removed
+
+- `duckdb` and `platformdirs` runtime dependencies, and the `[xbrl]` extra. All three had zero
+  import sites; the extra installed Arelle for a code path that does not exist.
+- `AtlasEvent`, which had no caller and no test. It returns with the event log that needs it.
+- An unreachable zero-flow guard in `payback_period`: at a crossing, `previous < 0` and
+  `cumulative >= 0` force `flow > 0` strictly.
 
 ## 0.1.0 — 2026-08-06
 

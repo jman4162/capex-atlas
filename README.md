@@ -18,9 +18,9 @@ life, and how long a data centre takes to fill. No hyperscaler discloses any of 
 So Capex Atlas does not estimate the return. It computes what would have to be true for a stated
 claim to hold, and marks every figure by how much evidence stands behind it.
 
-> **Status: v0.1.0.** Alphabet, Microsoft and Meta, end to end: ingestion, reconciliation, metrics,
-> a capital-vintage engine, analysis bundles, a CLI and a Streamlit lab. Not yet on PyPI. Segment
-> figures are unavailable from the SEC endpoint used; see [Limits](#limits).
+> **Status: v0.2.0.** Alphabet, Microsoft and Meta, end to end: ingestion, reconciliation, metrics,
+> a capital-vintage engine, analysis bundles, a CLI and a Streamlit lab. Segment figures are
+> unavailable from the SEC endpoint used; see [Limits](#limits).
 
 > **Not advice.** This is educational software. It is **not investment, legal, tax or accounting
 > advice**, carries **no warranty of accuracy or completeness**, and its authors accept **no
@@ -189,14 +189,15 @@ X to Y percent, and the sensitivity that dominates is utilization.*
 ## Install
 
 ```bash
-uv sync --group dev    # development, from a checkout
-```
-
-Not yet published to PyPI; see [RELEASING.md](RELEASING.md). Once it is:
-
-```bash
 pip install capex-atlas           # library and CLI
 pip install "capex-atlas[app]"    # + the Streamlit lab and a worked example
+```
+
+The app extra ships the lab and a worked analysis, so `capex-atlas app` works with no checkout.
+From source:
+
+```bash
+uv sync --group dev
 ```
 
 ## Development
@@ -221,7 +222,7 @@ cross-company symmetry check that stops one filer getting analytical treatment i
 
 ## Status
 
-**v0.1.0** — first release. Alphabet, Microsoft and Meta. Evidence-status propagation, the
+**v0.2.0** — first release on PyPI. Alphabet, Microsoft and Meta. Evidence-status propagation, the
 citation-enforced assumption registry, SEC ingestion, reconciliation identities, three named
 free-cash-flow definitions and several named returns, the capital-vintage engine with its
 what-must-be-true solver, analysis bundles with audit and diff, a Streamlit lab, and OpenTelemetry
