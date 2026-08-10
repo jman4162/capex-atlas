@@ -87,3 +87,37 @@ def test_streamlit_availability_is_reported_honestly():
     # The dev group installs it, so this is True here and False for a library-only
     # install. Either way the answer drives a clear message rather than a crash.
     assert launcher.streamlit_available() is True
+
+
+class TestTheCloudEntryPoint:
+    """`streamlit_app.py` is what Streamlit Community Cloud runs.
+
+    Cloud serves the app directory from the checkout but imports the library from
+    site-packages, and does not reliably reinstall when only the source changed.
+    A release that touched both once deployed a page importing a symbol its
+    installed library did not have, and the app died at startup.
+    """
+
+    @staticmethod
+    def entry_point() -> str:
+        root = Path(__file__).resolve().parents[2]
+        return (root / "streamlit_app.py").read_text(encoding="utf-8")
+
+    def test_it_puts_the_checkout_ahead_of_any_installed_copy(self):
+        source = self.entry_point()
+        assert 'SRC = ROOT / "src"' in source
+        assert "sys.path.insert(0, str(SRC))" in source
+
+    def test_the_library_and_the_page_resolve_to_one_tree(self):
+        root = Path(__file__).resolve().parents[2]
+        import capex_atlas
+
+        installed = Path(capex_atlas.__file__).resolve().parent
+        assert installed == (root / "src" / "capex_atlas").resolve(), (
+            "the test environment should already import the checkout; if this "
+            "fails the shim is the only thing keeping Cloud consistent"
+        )
+
+    def test_cloud_installs_the_package_editable(self):
+        root = Path(__file__).resolve().parents[2]
+        assert "-e ." in (root / "requirements.txt").read_text(encoding="utf-8")
