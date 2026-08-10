@@ -22,6 +22,9 @@ from capex_atlas.schemas.evidence import EvidenceStatus
 MIN_LINE_POINTS = 3
 """Below this a timeline is drawn as bars. A trend needs points to be a trend."""
 
+ANNOTATION_DROP = 24
+"""Pixels an annotation's text hangs below its anchor, clearing the subtitle."""
+
 STATUS_PATTERN: dict[EvidenceStatus, str] = {
     EvidenceStatus.REPORTED: "",
     EvidenceStatus.DERIVED: "",
@@ -170,6 +173,11 @@ def _layout(spec: ChartSpec, statuses: list[EvidenceStatus]) -> dict[str, Any]:
                     "showarrow": True,
                     "yref": "paper",
                     "y": 1,
+                    # Hang the label inside the plot. Plotly's default offset puts
+                    # annotation text above its anchor, which at the top of the
+                    # frame lands on top of the subtitle.
+                    "ay": ANNOTATION_DROP,
+                    "font": {"size": 10},
                 }
                 for item in spec.annotations
             ],
