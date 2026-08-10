@@ -100,6 +100,29 @@ def _select_facts(
     return tuple(sorted(keep, key=lambda f: (f.metric_id, f.period.label)))
 
 
+def _assumptions_used(
+    registry: AssumptionRegistry,
+    tax_rate: Assumption,
+    scenarios: Sequence[ScenarioResult],
+) -> tuple[Assumption, ...]:
+    """Every registry entry the bundle's figures rest on, resolved and carried.
+
+    The tax rate alone used to be carried, so a scenario's assumptions were
+    structurally absent however carefully it named them. That made the audit's
+    traceability requirement unsatisfiable, which is presumably why it only ever
+    checked that the tuple was non-empty.
+
+    An id that resolves nowhere raises here rather than travelling in a published
+    bundle as an unfollowable citation.
+    """
+    resolved: dict[str, Assumption] = {tax_rate.assumption_id: tax_rate}
+    for scenario in scenarios:
+        for assumption_id in scenario.definition.assumption_ids:
+            if assumption_id not in resolved:
+                resolved[assumption_id] = registry.get(assumption_id)
+    return tuple(resolved[key] for key in sorted(resolved))
+
+
 def build_analysis(
     payload: dict[str, Any],
     *,
@@ -180,7 +203,7 @@ def build_analysis(
                 key=lambda n: n.node_id,
             )
         ),
-        assumptions=(tax_rate,),
+        assumptions=_assumptions_used(registry, tax_rate, scenarios),
         validation=report,
         notes={
             "facts_scope": facts_scope.value,

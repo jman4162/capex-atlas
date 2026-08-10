@@ -67,7 +67,7 @@ def illustrative_scenario() -> ScenarioDefinition:
         discount_rate=Decimal("0.09"),
         horizon_years=8,
         assumption_ids=(
-            "useful_life.servers_and_network.googl",
+            "useful_life.servers_and_network_point.googl",
             "tax.us_federal_statutory_rate",
             "discount.required_return",
         ),

@@ -32,7 +32,18 @@ SOURCE = SourceReference(
 )
 
 
-def node(node_id: str = "calc:1", **overrides: object) -> CalculationNode:
+# A node id is a hash of the derivation, and the audit re-derives it, so a
+# hand-written "calc:1" is a node that cannot have produced its own id.
+NODE_ID = CalculationNode.derive_id(
+    metric_id="fcf.reported",
+    metric_version="1.0.0",
+    inputs=(),
+    assumption_ids=(),
+    period_label=PERIOD.label,
+)
+
+
+def node(node_id: str = NODE_ID, **overrides: object) -> CalculationNode:
     fields: dict[str, object] = {
         "node_id": node_id,
         "metric_id": "fcf.reported",
@@ -50,13 +61,13 @@ def node(node_id: str = "calc:1", **overrides: object) -> CalculationNode:
 
 def value(**overrides: object) -> AnalyticalValue:
     fields: dict[str, object] = {
-        "value_id": "calc:1",
+        "value_id": NODE_ID,
         "value": Decimal("60"),
         "unit": "USD",
         "status": EvidenceStatus.DERIVED,
         "period": PERIOD,
         "label": "free cash flow",
-        "formula_node_id": "calc:1",
+        "formula_node_id": NODE_ID,
         "source_ids": (SOURCE.source_id,),
     }
     fields.update(overrides)
@@ -114,12 +125,16 @@ class TestAuditCatchesUnsupportedNumbers:
         # Saying a figure is unknown is honest and requires no evidence, only a
         # node recording what was attempted.
         unknown = value(value=None, status=EvidenceStatus.UNRESOLVED, source_ids=())
-        assert audit_bundle(bundle(values=(unknown,))).passed
+        attempted = node(result=None, status=EvidenceStatus.UNRESOLVED)
+        assert audit_bundle(bundle(values=(unknown,), calculations=(attempted,))).passed
 
-    def test_a_computed_value_claiming_reported_status_warns(self):
+    def test_a_computed_value_claiming_reported_status_fails(self):
+        # Was a warning while nothing compared a value with its node. Overstating
+        # the evidence behind a figure is the direction that misleads a reader,
+        # so it is now an error.
         report = audit_bundle(bundle(values=(value(status=EvidenceStatus.REPORTED),)))
-        assert report.passed  # a warning, not an error
-        assert "a computed value is derived" in report.warnings[0].problem
+        assert not report.passed
+        assert any("firmer than the" in error.problem for error in report.errors)
 
     def test_a_value_without_a_period_warns(self):
         report = audit_bundle(bundle(values=(value(period=None),)))
@@ -275,3 +290,61 @@ def test_unsupported_entity_names_the_covered_filers():
 
     with pytest.raises(UnsupportedEntityError, match="out of scope"):
         build_analysis({}, entity_id="AMZN", period_label="2025FY", source=SOURCE)
+
+
+class TestAuditDetectsTampering:
+    """Every mutation here passed the audit before it compared content.
+
+    The audit walked identifiers and asked whether they resolved. It never asked
+    whether what they resolved to agreed with the figure citing it, so a
+    published number could be edited freely as long as it still pointed at some
+    real node. `verify` catches this by rebuilding from source, but it needs the
+    original inputs and refuses bundles it did not build, so a reader who
+    receives a bundle has the audit and nothing else.
+    """
+
+    @staticmethod
+    def tampered(**edits: object) -> bool:
+        """Whether the audit passes a bundle with one value edited."""
+        return audit_bundle(bundle(values=(value(**edits),))).passed
+
+    def test_an_edited_amount_is_caught(self):
+        assert not self.tampered(value=Decimal("60.01"))
+        assert not self.tampered(value=Decimal("1"))
+        assert not self.tampered(value=None)
+
+    def test_an_edited_unit_is_caught(self):
+        assert not self.tampered(unit="EUR")
+        assert not self.tampered(unit="percent")
+
+    def test_an_edited_period_is_caught(self):
+        assert not self.tampered(period=FiscalPeriod.parse("2019FY"))
+
+    def test_overstating_the_evidence_is_caught(self):
+        assert not self.tampered(status=EvidenceStatus.REPORTED)
+
+    def test_pointing_at_a_different_real_node_is_caught(self):
+        # The subtle one: nothing is missing, the citation resolves, and the
+        # figure still contradicts the calculation it names.
+        other = node(node_id="calc:other", result=Decimal("71"))
+        report = audit_bundle(
+            bundle(
+                values=(value(formula_node_id="calc:other"),),
+                calculations=(node(), other),
+            )
+        )
+        assert not report.passed
+        assert any("computed" in error.problem for error in report.errors)
+
+    def test_a_node_that_does_not_hash_to_its_inputs_is_caught(self):
+        forged = node(node_id="calc:handwritten")
+        report = audit_bundle(
+            bundle(values=(value(formula_node_id="calc:handwritten"),), calculations=(forged,))
+        )
+        assert not report.passed
+        assert any("does not hash" in error.problem for error in report.errors)
+
+    def test_weakening_a_status_is_allowed(self):
+        # A caller may know the figure rests on something the kernel did not see.
+        # A vintage summary is a scenario though its arithmetic is only derived.
+        assert self.tampered(status=EvidenceStatus.ESTIMATED)

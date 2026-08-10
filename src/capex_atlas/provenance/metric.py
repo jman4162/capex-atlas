@@ -128,6 +128,7 @@ class Metric:
             metric_version=spec.version,
             formula=spec.formula,
             inputs=input_ids,
+            literal_inputs=literals,
             assumption_ids=assumption_ids,
             source_ids=source_ids,
             result=result,

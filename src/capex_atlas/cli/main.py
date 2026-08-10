@@ -140,6 +140,14 @@ def analyze(
             "bundle's bytes, so 'used' suits an artifact meant to travel.",
         ),
     ] = FactScope.ALL,
+    allow_failed_reconciliation: Annotated[
+        bool,
+        typer.Option(
+            "--allow-failed-reconciliation",
+            help="Write the bundle even though an accounting identity failed. "
+            "It will not pass audit, and the override is recorded in it.",
+        ),
+    ] = False,
 ) -> None:
     """Build an analysis bundle and optionally write it out."""
     adapter_for(ticker)  # fail before the download if the filer is not covered
@@ -155,9 +163,32 @@ def analyze(
     for label, formatted, status in headline_table(bundle):
         typer.echo(f"  {label:<46} {formatted:>24}  {status}")
     typer.echo(f"\n{SHORT}")
-    if output is not None:
-        written = write_bundle(bundle, output)
-        typer.echo(f"\nwrote {written}")
+    if output is None:
+        return
+
+    # Corrupt inputs reach published figures. A trillion added to Assets moved
+    # invested capital by the same amount, and the bundle was written and audited
+    # clean because nothing consulted the report it was carrying. Building it is
+    # still allowed -- that is how you look at what broke -- but writing it out
+    # is where it becomes something a reader might trust.
+    failures = bundle.validation.failures if bundle.validation else ()
+    if failures and not allow_failed_reconciliation:
+        typer.echo(f"\nrefusing to write: {len(failures)} accounting identities failed", err=True)
+        for failure in failures[:5]:
+            typer.echo(f"  {failure.detail}", err=True)
+        if len(failures) > 5:
+            typer.echo(f"  ... and {len(failures) - 5} more", err=True)
+        typer.echo(
+            "\nFix the inputs, or pass --allow-failed-reconciliation to write it anyway.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    if failures:
+        bundle = bundle.model_copy(
+            update={"notes": {**bundle.notes, "reconciliation_override": len(failures)}}
+        )
+    written = write_bundle(bundle, output)
+    typer.echo(f"\nwrote {written}")
 
 
 @app.command(name="app")

@@ -8,6 +8,7 @@ this project can have.
 from __future__ import annotations
 
 import json
+from decimal import Decimal
 from pathlib import Path
 
 import httpx
@@ -15,6 +16,7 @@ import pytest
 from typer.testing import CliRunner
 
 from capex_atlas.bundle import FactScope, build_analysis, content_only, write_bundle
+from capex_atlas.bundle.audit import audit_bundle
 from capex_atlas.cli import main as cli
 from capex_atlas.cli.main import app
 from capex_atlas.schemas.period import PeriodKind
@@ -269,3 +271,54 @@ class TestTheAnnualScope:
     def test_it_still_carries_several_years(self):
         years = {fact.period.fiscal_year for fact in self.scoped(FactScope.ANNUAL).facts}
         assert len(years) >= 3, "a chart needs a run of periods to draw a line"
+
+
+class TestCorruptInputsCannotBePublished:
+    """Reconciliation ran, embedded its report, and changed nothing.
+
+    Adding a trillion to every Assets entry produced fourteen failed balance
+    sheet identities, moved published invested capital by the same trillion, and
+    still audited clean, because nothing read the report the bundle carried.
+    """
+
+    @staticmethod
+    def corrupted_payload() -> dict[str, object]:
+        payload = json.loads(FIXTURE.read_text())
+        for entry in payload["facts"]["us-gaap"]["Assets"]["units"]["USD"]:
+            entry["val"] = entry["val"] + 1_000_000_000_000
+        return payload
+
+    def built(self):  # type: ignore[no-untyped-def]
+        return build_analysis(
+            self.corrupted_payload(),
+            entity_id="GOOGL",
+            period_label="2025FY",
+            source=SourceReference(kind=SourceKind.SEC_FILING, url="https://x"),
+        )
+
+    def test_the_corruption_is_detected_by_reconciliation(self):
+        report = self.built().validation
+        assert report is not None
+        assert not report.passed
+        assert report.failures
+
+    def test_it_reaches_a_published_figure(self):
+        # Not only "the report is ignored": the bad fact is in the output.
+        capital = self.built().value("invested capital (operating basis)")
+        assert capital is not None
+        assert capital.value is not None
+        assert capital.value > Decimal("1e12")
+
+    def test_the_audit_now_fails_it(self):
+        report = audit_bundle(self.built())
+        assert not report.passed
+        assert any("accounting identity failed" in error.problem for error in report.errors)
+
+    def test_a_clean_bundle_still_passes(self):
+        clean = build_analysis(
+            json.loads(FIXTURE.read_text()),
+            entity_id="GOOGL",
+            period_label="2025FY",
+            source=SourceReference(kind=SourceKind.SEC_FILING, url="https://x"),
+        )
+        assert audit_bundle(clean).passed

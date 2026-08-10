@@ -1,6 +1,15 @@
 {
   "assumptions": [
     {
+      "assumption_id": "discount.required_return",
+      "basis": "user_input",
+      "citation": null,
+      "description": "Required return used to discount vintage cash flows. There is no publicly correct value; the reader chooses it and owns the consequence.",
+      "entity_id": null,
+      "unit": "ratio",
+      "value": "0.09"
+    },
+    {
       "assumption_id": "tax.us_federal_statutory_rate",
       "basis": "published_third_party",
       "citation": {
@@ -21,6 +30,28 @@
       "entity_id": null,
       "unit": "ratio",
       "value": "0.21"
+    },
+    {
+      "assumption_id": "useful_life.servers_and_network_point.googl",
+      "basis": "filing_disclosure",
+      "citation": {
+        "accession": "0001652044-26-000018",
+        "content_sha256": null,
+        "form": "10-K",
+        "kind": "sec_filing",
+        "license_status": null,
+        "page": null,
+        "parser_version": null,
+        "quote": "We depreciate servers and network equipment generally over a period of six years.",
+        "retrieved_at": null,
+        "section": "Note 1. Summary of Significant Accounting Policies - Property and Equipment",
+        "source_id": "src:c26a7c0294ad0c49",
+        "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm"
+      },
+      "description": "Single server life used when a schedule needs one number.\n\nUnlike the other two filers, this one is disclosed rather than chosen: Alphabet\nstates six years outright, so results computed from it stay reported-grade.",
+      "entity_id": "GOOGL",
+      "unit": "years",
+      "value": "6"
     }
   ],
   "calculations": [
@@ -28,6 +59,9 @@
       "assumption_ids": [],
       "formula": "years until cumulative free cash flow turns positive",
       "inputs": [],
+      "literal_inputs": [
+        "[-8590000000,2211125000,2609937500,2609937500,2609937500,2609937500,0,0,0]"
+      ],
       "metric_id": "vintage.payback",
       "metric_version": "1.0.0",
       "node_id": "calc:1bed0f31ce7e1155",
@@ -44,6 +78,7 @@
         "val:92c682727d8b5857",
         "val:8d4177103dd83c62"
       ],
+      "literal_inputs": [],
       "metric_id": "capital.net_investment",
       "metric_version": "1.0.0",
       "node_id": "calc:1e8f864677c3cce4",
@@ -63,6 +98,7 @@
         "calc:ef6ebc84a3bd57b5",
         "calc:6cf5d72b75ed0536"
       ],
+      "literal_inputs": [],
       "metric_id": "returns.roic",
       "metric_version": "1.0.0",
       "node_id": "calc:2593047f3f99dd64",
@@ -82,6 +118,10 @@
       "assumption_ids": [],
       "formula": "sum(free cash flow_t / (1 + discount rate)^t)",
       "inputs": [],
+      "literal_inputs": [
+        "[-8590000000,2211125000,2609937500,2609937500,2609937500,2609937500,0,0,0]",
+        "0.09"
+      ],
       "metric_id": "vintage.npv",
       "metric_version": "1.0.0",
       "node_id": "calc:2b9bcd056cd30653",
@@ -98,6 +138,7 @@
         "val:2508945f84f04b82",
         "val:d6de18516392054e"
       ],
+      "literal_inputs": [],
       "metric_id": "returns.invested_capital_operating",
       "metric_version": "1.0.0",
       "node_id": "calc:63d6da11626ba701",
@@ -119,6 +160,7 @@
         "val:f60a1cb741a1555b",
         "val:4b6ac6aa4c4a84f4"
       ],
+      "literal_inputs": [],
       "metric_id": "returns.invested_capital_ex_cash",
       "metric_version": "1.0.0",
       "node_id": "calc:6cf5d72b75ed0536",
@@ -140,6 +182,7 @@
         "val:e0bc589b5ea387b6",
         "val:92c682727d8b5857"
       ],
+      "literal_inputs": [],
       "metric_id": "fcf.reported",
       "metric_version": "1.0.0",
       "node_id": "calc:a0cbf733679405fb",
@@ -159,6 +202,7 @@
         "val:92c682727d8b5857",
         "val:20164955c1cc6dfb"
       ],
+      "literal_inputs": [],
       "metric_id": "capex.intensity",
       "metric_version": "1.0.0",
       "node_id": "calc:abf7ef5c7ec2c14c",
@@ -178,6 +222,7 @@
         "val:92c682727d8b5857",
         "val:8d4177103dd83c62"
       ],
+      "literal_inputs": [],
       "metric_id": "capex.to_depreciation",
       "metric_version": "1.0.0",
       "node_id": "calc:c0355abbdd37d413",
@@ -198,6 +243,9 @@
         "val:92c682727d8b5857",
         "val:33647fe89c266e8d"
       ],
+      "literal_inputs": [
+        "\u0000none"
+      ],
       "metric_id": "fcf.standardized",
       "metric_version": "1.0.0",
       "node_id": "calc:de67f4477a9ebb1f",
@@ -215,6 +263,9 @@
       "assumption_ids": [],
       "formula": "rate where sum(free cash flow_t / (1 + rate)^t) = 0",
       "inputs": [],
+      "literal_inputs": [
+        "[-8590000000,2211125000,2609937500,2609937500,2609937500,2609937500,0,0,0]"
+      ],
       "metric_id": "vintage.irr",
       "metric_version": "1.0.0",
       "node_id": "calc:e8e175aea4d02ed7",
@@ -231,6 +282,7 @@
         "calc:ef6ebc84a3bd57b5",
         "calc:63d6da11626ba701"
       ],
+      "literal_inputs": [],
       "metric_id": "returns.roic",
       "metric_version": "1.0.0",
       "node_id": "calc:ede130ecd087e331",
@@ -252,6 +304,7 @@
       "inputs": [
         "val:7416c960acc3de2a"
       ],
+      "literal_inputs": [],
       "metric_id": "returns.nopat",
       "metric_version": "1.0.0",
       "node_id": "calc:ef6ebc84a3bd57b5",
@@ -271,6 +324,7 @@
         "val:92c682727d8b5857",
         "val:33647fe89c266e8d"
       ],
+      "literal_inputs": [],
       "metric_id": "fcf.lease_adjusted",
       "metric_version": "1.0.0",
       "node_id": "calc:ff3e47717df969e5",
@@ -6151,7 +6205,7 @@
   "period_label": "2025FY",
   "provenance": {
     "command": "python scripts/build_example.py",
-    "created_at": "2026-08-10T05:48:08.876340Z",
+    "created_at": "2026-08-10T06:21:21.885797Z",
     "package_version": "0.2.0",
     "schema_version": "1"
   },
@@ -6162,6 +6216,9 @@
           "assumption_ids": [],
           "formula": "years until cumulative free cash flow turns positive",
           "inputs": [],
+          "literal_inputs": [
+            "[-8590000000,2211125000,2609937500,2609937500,2609937500,2609937500,0,0,0]"
+          ],
           "metric_id": "vintage.payback",
           "metric_version": "1.0.0",
           "node_id": "calc:1bed0f31ce7e1155",
@@ -6175,6 +6232,10 @@
           "assumption_ids": [],
           "formula": "sum(free cash flow_t / (1 + discount rate)^t)",
           "inputs": [],
+          "literal_inputs": [
+            "[-8590000000,2211125000,2609937500,2609937500,2609937500,2609937500,0,0,0]",
+            "0.09"
+          ],
           "metric_id": "vintage.npv",
           "metric_version": "1.0.0",
           "node_id": "calc:2b9bcd056cd30653",
@@ -6188,6 +6249,9 @@
           "assumption_ids": [],
           "formula": "rate where sum(free cash flow_t / (1 + rate)^t) = 0",
           "inputs": [],
+          "literal_inputs": [
+            "[-8590000000,2211125000,2609937500,2609937500,2609937500,2609937500,0,0,0]"
+          ],
           "metric_id": "vintage.irr",
           "metric_version": "1.0.0",
           "node_id": "calc:e8e175aea4d02ed7",
@@ -6218,7 +6282,7 @@
           }
         ],
         "assumption_ids": [
-          "useful_life.servers_and_network.googl",
+          "useful_life.servers_and_network_point.googl",
           "tax.us_federal_statutory_rate",
           "discount.required_return"
         ],

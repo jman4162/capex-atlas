@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from capex_atlas.assumptions.registry import AssumptionRegistry
 from capex_atlas.bundle.audit import audit_bundle
 from capex_atlas.bundle.io import BUNDLE_FILE, content_only, read_bundle
 from capex_atlas.schemas.evidence import EvidenceStatus
@@ -68,9 +69,20 @@ def test_the_example_carries_a_scenario_and_it_is_audited(committed):  # type: i
 
 
 def test_the_scenario_names_the_assumptions_it_rests_on(committed):  # type: ignore[no-untyped-def]
+    """Naming them is not enough; they have to be findable.
+
+    This test used to assert the presence of the literal string
+    `useful_life.servers_and_network.googl`, which resolves in no registry -- so
+    it pinned a dangling citation in place rather than catching it. Assert that
+    every id resolves instead, which is the property a reader depends on.
+    """
     ids = committed.scenarios[0].definition.assumption_ids
-    assert "useful_life.servers_and_network.googl" in ids
     assert "tax.us_federal_statutory_rate" in ids
+    for assumption_id in ids:
+        assert committed.assumption(assumption_id) is not None, (
+            f"the scenario cites {assumption_id}, which the bundle does not carry"
+        )
+        assert AssumptionRegistry.load().get(assumption_id) is not None
 
 
 def test_the_example_states_it_is_not_an_estimate(committed):  # type: ignore[no-untyped-def]

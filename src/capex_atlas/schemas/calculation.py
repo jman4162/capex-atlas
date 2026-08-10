@@ -29,6 +29,16 @@ class CalculationNode(BaseModel):
     inputs: tuple[str, ...]
     """``value_id`` of each input, in call order."""
 
+    literal_inputs: tuple[str, ...] = ()
+    """Canonical form of each argument that was neither a value nor an assumption.
+
+    A discount rate passed as a bare ``Decimal``, or a ``None`` standing in for a
+    concept the filer never tagged, is not a graph input but does change both the
+    result and the node id. Recording it is what makes the id checkable: without
+    it a reader cannot re-derive ``node_id`` from the node, and an audit cannot
+    tell a genuine derivation from a forged one.
+    """
+
     assumption_ids: tuple[str, ...] = ()
     source_ids: tuple[str, ...] = ()
     result: Decimal | None
