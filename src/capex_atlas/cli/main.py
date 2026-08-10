@@ -17,6 +17,7 @@ import typer
 from capex_atlas import __version__
 from capex_atlas.accounting.reconciliation import CheckStatus, reconcile
 from capex_atlas.adapters import adapter_for
+from capex_atlas.adapters.base import concrete_concepts
 from capex_atlas.bundle import (
     AnalysisBundle,
     FactScope,
@@ -94,10 +95,16 @@ def ingest(
 @app.command(name="reconcile")
 def reconcile_cmd(
     ticker: TickerArg,
-    period: PeriodOpt = "2025FY",
     data_dir: Annotated[Path, typer.Option("--data-dir")] = DEFAULT_DATA,
 ) -> None:
-    """Run the accounting identities over a filer's facts."""
+    """Run the accounting identities over a filer's facts.
+
+    Every period the filer reports, not one: an identity that holds this year and
+    broke two years ago is worth knowing about, and the checks are cheap. There is
+    deliberately no ``--through`` here. It used to exist, was never passed to
+    anything, and accepted ``banana`` as readily as ``2025FY`` while changing
+    nothing about the output.
+    """
     # Resolve by ticker, and do it before touching the network: there is no
     # reason to download a filing for a company we cannot analyze. Hardcoding
     # one adapter here meant `reconcile MSFT` silently applied a December
@@ -111,13 +118,19 @@ def reconcile_cmd(
         source=source,
         statement_map=adapter.statement_map(),
     )
+    # Expanded to the concrete XBRL tags, exactly as build_analysis does. The
+    # adapter names concepts canonically -- capex.cash -- while an extracted fact
+    # keeps the tag the filer used, so passing the canonical names matched nothing
+    # and the entire year-to-date family was reported as skipped. Fourteen checks
+    # ran where thirty-four should have, and the twenty missing ones were the
+    # quarterly consistency checks this command exists to run.
     report = reconcile(
         extraction.facts,
-        cumulative_concepts=list(adapter.cumulative_concepts()),
+        cumulative_concepts=concrete_concepts(adapter, adapter.cumulative_concepts()),
     )
     skipped = sum(1 for r in report.results if r.status is CheckStatus.SKIPPED)
     typer.echo(
-        f"{ticker} {period}: {report.verified_count} checks verified, "
+        f"{ticker}: {report.verified_count} checks verified, "
         f"{len(report.failures)} failed, {skipped} skipped"
     )
     for failure in report.failures:
@@ -323,6 +336,3 @@ def _where_they_differ(stored: AnalysisBundle, rebuilt: AnalysisBundle) -> str:
     if not sections:
         return "no section differs, which should be impossible; please report this"
     return "sections that differ: " + ", ".join(sections)
-
-
-app.command(name="reconcile")(reconcile_cmd)

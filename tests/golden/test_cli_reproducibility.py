@@ -193,11 +193,31 @@ class TestTheCommandsThatReachSec:
         assert audited.exit_code == 0, audited.output
 
     def test_reconcile_runs_the_identities(self, offline_sec: None, tmp_path: Path):
-        result = runner.invoke(
-            app, ["reconcile", "GOOGL", "--through", "2025FY", "--data-dir", str(tmp_path / "data")]
-        )
+        result = runner.invoke(app, ["reconcile", "GOOGL", "--data-dir", str(tmp_path / "data")])
         assert result.exit_code == 0, result.output
         assert "checks verified" in result.stdout
+
+    def test_reconcile_runs_the_year_to_date_checks_it_advertises(
+        self, offline_sec: None, tmp_path: Path
+    ):
+        """The command passed canonical concept names to a matcher keyed on XBRL
+        tags, so the whole quarterly family matched nothing and was reported as
+        skipped -- with a message blaming absent data for a naming mismatch.
+
+        Asserting only "checks verified" was what let it through, so this counts.
+        """
+        result = runner.invoke(app, ["reconcile", "GOOGL", "--data-dir", str(tmp_path / "data")])
+        assert result.exit_code == 0, result.output
+        assert "34 checks verified" in result.stdout
+        assert "0 skipped" in result.stdout
+
+    def test_reconcile_no_longer_takes_a_period_it_ignores(self, offline_sec: None, tmp_path: Path):
+        # --through was echoed and never used; it accepted `banana`.
+        result = runner.invoke(
+            app,
+            ["reconcile", "GOOGL", "--through", "2025FY", "--data-dir", str(tmp_path / "data")],
+        )
+        assert result.exit_code != 0
 
 
 class TestTheAppCommand:
