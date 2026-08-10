@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import textwrap
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
@@ -130,8 +132,19 @@ class TestTheLivePathWithARealExporter:
     @staticmethod
     def run_probe(body: str) -> str:
         script = PROBE_PREAMBLE + textwrap.dedent(body)
+        # Point the child at src/ directly rather than relying on the editable
+        # install's .pth file. Under a file-sync service that rewrites .venv, the
+        # parent keeps working from already-imported modules while a fresh
+        # interpreter cannot import at all, which failed these tests for reasons
+        # that had nothing to do with tracing.
+        source_root = Path(__file__).resolve().parents[2] / "src"
+        environment = {**os.environ, "PYTHONPATH": str(source_root)}
         finished = subprocess.run(
-            [sys.executable, "-c", script], capture_output=True, text=True, timeout=90
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=90,
+            env=environment,
         )
         assert finished.returncode == 0, finished.stderr
         return finished.stdout
