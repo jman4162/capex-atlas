@@ -19,6 +19,9 @@ from capex_atlas.schemas.decimals import calculation_context
 
 MAX_ITERATIONS = 200
 CONVERGENCE_TOLERANCE = Decimal("0.0000000001")
+RESIDUAL_FRACTION = Decimal("0.000001")
+"""How near zero a collapsed interval's value must be, relative to the starting
+scale, to count as a root rather than a jump."""
 IRR_LOWER_BOUND = Decimal("-0.9999")
 IRR_UPPER_BOUND = Decimal("10")
 
@@ -85,6 +88,48 @@ def payback_period(cash_flows: Sequence[Decimal]) -> Decimal | None:
     return None
 
 
+def solve_for_threshold(
+    holds: object,
+    low: Decimal,
+    high: Decimal,
+    *,
+    rising: bool = True,
+) -> Decimal | None:
+    """The least demanding value in [low, high] at which a monotone claim holds.
+
+    Root-finding answers "where does this equal the target". Most claims worth
+    testing are inequalities -- pay back *within* three years -- and their
+    objectives are step functions, so the target can be stepped straight over: a
+    vintage can go from never paying back to paying back in four years with
+    nothing in between. Asked for equality, the search finds nothing and reports
+    the claim impossible while the top of the range satisfies it comfortably.
+
+    Searching the predicate needs only monotonicity, which is what the levers
+    have. The returned value always satisfies the claim, because the search only
+    ever moves the satisfying bound inward.
+
+    ``rising`` says which direction helps. Utilization, revenue yield and margin
+    improve a claim as they increase; lead time makes it worse, so there the
+    answer is the largest value that still works rather than the smallest.
+    """
+    assert callable(holds)
+    better, worse = (high, low) if rising else (low, high)
+    if holds(worse):
+        # Even the least demanding end of the range clears it.
+        return worse
+    if not holds(better):
+        return None
+    for _ in range(MAX_ITERATIONS):
+        if abs(better - worse) < CONVERGENCE_TOLERANCE:
+            return better
+        middle = (better + worse) / 2
+        if holds(middle):
+            better = middle
+        else:
+            worse = middle
+    return better
+
+
 def solve_for_root(
     evaluate: object,
     low: Decimal,
@@ -95,6 +140,10 @@ def solve_for_root(
     ``None`` when the endpoints do not bracket a sign change, meaning no value in
     the searched range satisfies the condition. That is a real finding: it says
     the claim cannot be met anywhere in the plausible range.
+
+    Also ``None`` when the interval collapses onto a discontinuity rather than a
+    crossing. Returning the midpoint of a jump would dress a value that satisfies
+    nothing as the answer to "what would have to be true".
     """
     assert callable(evaluate)
     value_low = evaluate(low)
@@ -108,15 +157,26 @@ def solve_for_root(
     if value_low * value_high > 0:
         return None
 
+    # A sign change across an interval means a crossing only if the function is
+    # continuous there. A jump changes sign too, and bisection narrows onto it
+    # just as happily, so the interval collapsing is not on its own evidence that
+    # a root was found. Measured against the scale the search started at, because
+    # an absolute threshold cannot serve both a payback in years and a net present
+    # value in billions.
+    scale = max(abs(value_low), abs(value_high))
+    threshold = scale * RESIDUAL_FRACTION
+
     for _ in range(MAX_ITERATIONS):
         middle = (low + high) / 2
         value_middle = evaluate(middle)
         if value_middle is None:
             return None
-        if abs(value_middle) < CONVERGENCE_TOLERANCE or (high - low) < CONVERGENCE_TOLERANCE:
+        if abs(value_middle) < CONVERGENCE_TOLERANCE:
             return middle
+        if (high - low) < CONVERGENCE_TOLERANCE:
+            return middle if abs(value_middle) <= threshold else None
         if value_low * value_middle < 0:
             high = middle
         else:
             low, value_low = middle, value_middle
-    return (low + high) / 2
+    return None

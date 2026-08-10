@@ -24,7 +24,7 @@ from capex_atlas.numerics import (
     internal_rate_of_return,
     net_present_value,
     payback_period,
-    solve_for_root,
+    solve_for_threshold,
 )
 from capex_atlas.schemas.decimals import format_compact
 from capex_atlas.schemas.evidence import EvidenceStatus
@@ -76,6 +76,18 @@ TARGET_UNITS: Final = {
     Target.NPV_BREAKEVEN: "USD",
 }
 
+LEVER_RISING: Final = {
+    Lever.UTILIZATION: True,
+    Lever.REVENUE_YIELD: True,
+    Lever.OPERATING_MARGIN: True,
+    Lever.LEAD_TIME: False,
+}
+"""Which way a lever has to move to help a claim.
+
+Selling more, earning more per unit and keeping more of it all improve a return.
+Waiting longer does not, so for lead time the answer is the most delay a claim
+survives rather than the least."""
+
 
 @dataclass(frozen=True)
 class RequirementResult:
@@ -106,7 +118,10 @@ class RequirementResult:
                 f"No {lever} between {low} and {high} reaches {claim}. On these assumptions the "
                 "claim cannot hold anywhere in the plausible range."
             )
-        return f"A {lever} of {format_compact(self.required, lever_unit)} is required for {claim}."
+        shown = format_compact(self.required, lever_unit)
+        if LEVER_RISING[self.lever]:
+            return f"A {lever} of {shown} is required for {claim}."
+        return f"A {lever} of no more than {shown} is required for {claim}."
 
 
 def _with_lever(
@@ -146,7 +161,20 @@ def required_for(
     whole range, which is more informative than a number would have been.
     """
 
-    def shortfall(candidate: Decimal) -> Decimal | None:
+    def holds(candidate: Decimal) -> bool:
+        """Whether the claim is satisfied at this lever value.
+
+        This returns a yes or no rather than a distance from the target. The
+        previous version searched for the point where an error term crossed zero,
+        which assumes the objective passes
+        through the target continuously. Payback does not: it steps. A vintage
+        that never pays back can go straight to four years as utilization reaches
+        one, skipping five entirely, and an equality search then declared a
+        five-year claim impossible while the top of the range met it. The same
+        search also converged on the step itself and published the midpoint --
+        that is where "67.3% utilization gives a three-year payback" came from,
+        for a model in which nothing gives a three-year payback.
+        """
         schedule = build_schedule(
             _with_lever(parameters, lever, candidate),
             tax_rate=tax_rate,
@@ -154,18 +182,14 @@ def required_for(
         )
         flows = schedule.cash_flows
         if target is Target.NPV_BREAKEVEN:
-            return net_present_value(flows, discount_rate) - target_value
+            return net_present_value(flows, discount_rate) >= target_value
         if target is Target.IRR:
             rate = internal_rate_of_return(flows)
-            return None if rate is None else rate - target_value
+            return rate is not None and rate >= target_value
         years = payback_period(flows)
-        if years is None:
-            # Never pays back within the horizon, so it misses the target by at
-            # least the whole horizon. Signed so bisection can still work.
-            return Decimal(horizon_years) - target_value
-        return target_value - years
+        return years is not None and years <= target_value
 
-    required = solve_for_root(shortfall, search_low, search_high)
+    required = solve_for_threshold(holds, search_low, search_high, rising=LEVER_RISING[lever])
     weakest = EvidenceStatus.weakest(
         EvidenceStatus.SCENARIO, *(asset.status for asset in parameters)
     )

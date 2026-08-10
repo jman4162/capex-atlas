@@ -179,7 +179,61 @@ class TestSummary:
 
 
 class TestWhatMustBeTrue:
+    @staticmethod
+    def payback_at(utilization: Decimal, horizon: int = 8) -> Decimal | None:
+        asset = servers().model_copy(update={"utilization_ramp": (utilization,)})
+        schedule = build_schedule([asset], tax_rate=TAX, horizon_years=horizon)
+        return payback_period(schedule.cash_flows)
+
     def test_solves_the_utilization_a_payback_claim_requires(self):
+        # Five years, not three: nothing in this bracket pays back in three, the
+        # fastest being 3.30 years at full utilization. The earlier version of
+        # this test asked for three, asserted achievable, and passed on a number
+        # that was the answer to a different question -- it encoded the solver
+        # bug rather than catching it.
+        result = required_for(
+            [servers()],
+            lever=Lever.UTILIZATION,
+            target=Target.PAYBACK_YEARS,
+            target_value=Decimal(5),
+            tax_rate=TAX,
+            discount_rate=DISCOUNT,
+            horizon_years=8,
+            search_low=Decimal("0.05"),
+            search_high=Decimal(1),
+        )
+        assert result.achievable
+        assert result.required is not None
+        assert Decimal("0.05") < result.required <= Decimal(1)
+
+    def test_the_solved_value_actually_satisfies_the_claim(self):
+        """The invariant nobody was checking. A returned number has to work."""
+        result = required_for(
+            [servers()],
+            lever=Lever.UTILIZATION,
+            target=Target.PAYBACK_YEARS,
+            target_value=Decimal(5),
+            tax_rate=TAX,
+            discount_rate=DISCOUNT,
+            horizon_years=8,
+            search_low=Decimal("0.05"),
+            search_high=Decimal(1),
+        )
+        assert result.required is not None
+        achieved = self.payback_at(result.required)
+        assert achieved is not None
+        assert abs(achieved - Decimal(5)) < Decimal("0.001"), (
+            f"solver said {result.required} gives a 5-year payback; it gives {achieved}"
+        )
+
+    def test_a_target_faster_than_the_model_allows_is_refused(self):
+        """The regression that reached production.
+
+        Every utilization in the bracket pays back slower than three years, yet
+        the solver reported 67.3% -- the value at which payback is five. The
+        refusal is the correct answer and the useful one.
+        """
+        assert self.payback_at(Decimal(1)) > Decimal(3)
         result = required_for(
             [servers()],
             lever=Lever.UTILIZATION,
@@ -191,9 +245,8 @@ class TestWhatMustBeTrue:
             search_low=Decimal("0.05"),
             search_high=Decimal(1),
         )
-        assert result.achievable
-        assert result.required is not None
-        assert Decimal("0.05") < result.required <= Decimal(1)
+        assert not result.achievable
+        assert "cannot hold anywhere" in result.describe()
 
     def test_an_impossible_claim_returns_no_number_and_says_why(self):
         # Nothing in a 0 to 100 percent utilization range pays this back in a

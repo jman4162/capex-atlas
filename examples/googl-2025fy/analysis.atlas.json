@@ -6151,7 +6151,7 @@
   "period_label": "2025FY",
   "provenance": {
     "command": "python scripts/build_example.py",
-    "created_at": "2026-08-10T02:26:42.563814Z",
+    "created_at": "2026-08-10T05:48:08.876340Z",
     "package_version": "0.2.0",
     "schema_version": "1"
   },
@@ -6267,9 +6267,9 @@
       },
       "requirements": [
         {
-          "description": "No utilization between 5.0% and 100.0% reaches payback of 3.0 years. On these assumptions the claim cannot hold anywhere in the plausible range.",
+          "description": "A utilization of 80.9% is required for payback of 3.0 years.",
           "lever": "utilization",
-          "required": null,
+          "required": "0.808650681766448542475700379",
           "searched_high": "1",
           "searched_low": "0.05",
           "target": "payback_years",

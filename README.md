@@ -68,8 +68,7 @@ $ capex-atlas app        # Vintage simulator -> Run scenario
 ○ Payback                  3.4 years
 
 What must be true for a three-year payback?
-  No utilization between 5.0% and 100.0% reaches payback of 3.0 years. On these
-  assumptions the claim cannot hold anywhere in the plausible range.
+  A utilization of 80.9% is required for payback of 3.0 years.
 
 What the answer rests on, most sensitive first:
   Revenue yield     · 0.25 → 0.6            swings NPV by  $5.0B
@@ -77,9 +76,10 @@ What the answer rests on, most sensitive first:
   Lead time         · 0.0 years → 3.0 years swings NPV by  $2.6B
 ```
 
-The refusal is the useful answer. Utilization is capped at 100%, and even there the ramp keeps
-payback above three years, so the ramp is the binding constraint and no amount of demand fixes it.
-The `○` marks say every one of those figures is a what-if.
+The output is a condition. Whether 80.9% sustained utilization is plausible for a fleet of this age
+is a judgement about the business, and the tool leaves it to the reader rather than pricing it for
+them. The `○` marks say every one of those figures is a what-if, and the sensitivities say which
+assumption to attack first: revenue yield moves the answer twice as far as the build delay does.
 
 ## What the analysis looks like
 
