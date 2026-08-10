@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
+from pydantic import ValidationError
 
 from capex_atlas.capital_vintages import (
     AssetClassParameters,
@@ -415,3 +416,76 @@ class TestTheHonestlyUnknownBranches:
         )
         assert not result.achievable
         assert "cannot hold anywhere" in result.describe()
+
+
+class TestFractionalLives:
+    """A life is a Decimal, so it may not be a whole number of years.
+
+    Meta's registry carries a 5.5-year server life. Truncating with int() while
+    still charging depreciation at spend/5.5 wrote the asset down to 90.9% of
+    cost and retired it holding the rest.
+    """
+
+    @staticmethod
+    def schedule(life: str, horizon: int = 12):  # type: ignore[no-untyped-def]
+        asset = servers(useful_life_years=Decimal(life), utilization_ramp=(Decimal(1),))
+        return build_schedule([asset], tax_rate=TAX, horizon_years=horizon)
+
+    # Dividing by a non-terminating life leaves a residue in the last of the 34
+    # digits the calculation context carries. Anything larger is a real gap.
+    ROUNDING = Decimal("0.0000000000000000001")
+
+    @pytest.mark.parametrize("life", ["5", "5.5", "5.9", "0.5", "6", "12.25"])
+    def test_an_asset_is_written_down_to_its_cost(self, life: str):
+        total = sum(year.depreciation for year in self.schedule(life).years)
+        assert abs(total - Decimal(1000)) < self.ROUNDING, (
+            f"{life}-year life recovered {total} of 1000"
+        )
+
+    def test_a_longer_life_never_recovers_less(self):
+        # 5.9 years used to recover 84.7 where 5.0 recovered 100, because the
+        # charge divided by the true life while the gate used the truncated one.
+        recovered = {
+            life: sum(year.depreciation for year in self.schedule(life).years)
+            for life in ("5", "5.5", "5.9", "6")
+        }
+        assert max(recovered.values()) - min(recovered.values()) < self.ROUNDING, recovered
+
+    def test_a_part_year_life_still_enters_service(self):
+        # int(0.5) is 0, so retirement equalled service start and the asset was
+        # never in service for any row: no revenue, no depreciation, silently.
+        schedule = self.schedule("0.5")
+        assert schedule.first_service_year == 0
+        assert schedule.years[0].revenue > 0
+
+    def test_the_final_partial_year_is_prorated(self):
+        schedule = self.schedule("5.5")
+        running = [year for year in schedule.years if year.in_service]
+        assert len(running) == 6
+        assert running[-1].depreciation == running[0].depreciation / 2
+        assert running[-1].revenue == running[0].revenue / 2
+
+    def test_a_fractional_lead_time_is_refused(self):
+        # Rounding 1.9 down to 1 would bring a data centre nearly a year earlier
+        # into service and flatter the cash drag the model exists to show.
+        with pytest.raises(ValidationError, match="whole number of years"):
+            servers(lead_time_years=Decimal("1.9"))
+
+
+class TestParametersMustBeEconomicallyCoherent:
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("spend", Decimal(-100)),
+            ("useful_life_years", Decimal(0)),
+            ("useful_life_years", Decimal(-3)),
+            ("lead_time_years", Decimal(-1)),
+            ("operating_margin", Decimal(12)),
+            ("residual_value_rate", Decimal(4)),
+            ("utilization_ramp", (Decimal(5),)),
+            ("utilization_ramp", ()),
+        ],
+    )
+    def test_an_impossible_parameter_is_refused(self, field: str, value: object):
+        with pytest.raises(ValidationError):
+            servers(**{field: value})

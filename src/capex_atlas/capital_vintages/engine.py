@@ -73,21 +73,31 @@ def _year_row(
         if year == 0:
             outflow += asset.spend
 
+        # Lead time is validated as whole years, so this truncation is exact.
         service_start = int(asset.lead_time_years)
-        retirement_year = service_start + int(asset.useful_life_years)
+        life = asset.useful_life_years
+        whole_years = int(life)
+        last_full_year = service_start + whole_years
+        retirement_year = service_start + _ceil_years(life)
         years_running = year - service_start
 
         if service_start <= year < retirement_year:
             in_service = True
+            # A life of 5.5 years runs five whole years and half of a sixth.
+            # Truncating instead retired the asset after five while still
+            # charging depreciation at spend/5.5, so it was written down to
+            # 90.9% of cost and never recovered the rest -- and a 5.9-year life
+            # recovered less than a 5.0-year one, which is backwards. A life
+            # under a year truncated to zero and the asset never ran at all.
+            share = Decimal(1) if year < last_full_year else life - whole_years
             utilization = asset.utilization_in(years_running)
-            asset_revenue = asset.spend * asset.revenue_yield * utilization
+            asset_revenue = asset.spend * asset.revenue_yield * utilization * share
             revenue += asset_revenue
             cash_operating_profit += asset_revenue * asset.operating_margin
             maintenance += asset_revenue * asset.maintenance_rate
             capital_in_service += asset.spend
             utilization_weighted += utilization * asset.spend
-            if asset.useful_life_years > 0:
-                depreciation += asset.spend / asset.useful_life_years
+            depreciation += asset.spend / life * share
 
         # Whatever the asset is worth is recovered when it retires, or at the
         # horizon if the model stops first.
@@ -175,3 +185,9 @@ def summarize(schedule: VintageSchedule, *, discount_rate: Decimal) -> dict[str,
         )
         for name, value in results.items()
     }
+
+
+def _ceil_years(life: Decimal) -> int:
+    """Model years a life spans, counting a partial final year as a whole row."""
+    whole = int(life)
+    return whole if life == whole else whole + 1
