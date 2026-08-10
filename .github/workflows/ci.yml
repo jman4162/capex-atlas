@@ -16,6 +16,12 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # requires-python is >=3.12, and only whatever uv resolved by default was
+        # ever exercised. A floor nobody runs is a claim, not a guarantee.
+        python: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +29,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+          python-version: ${{ matrix.python }}
 
       - name: Install dependencies
         # The dev group carries streamlit and plotly, so the lab is exercised here
@@ -41,7 +48,10 @@ jobs:
         run: uv run lint-imports
 
       - name: Tests
-        run: uv run pytest --cov --cov-report=term-missing
+        # Coverage was measured and discarded. The floor sits just under the
+        # current number so a real drop fails rather than being reported to
+        # nobody, and is meant to be raised, never lowered to fit a change.
+        run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=93
 
       - name: Example bundle audits clean
         # Drift is caught by tests/golden/test_example_bundle.py, which rebuilds
@@ -55,6 +65,13 @@ jobs:
         run: |
           uv build
           uvx twine check dist/*
+
+      - name: Dependency audit
+        # twine check renders metadata; it says nothing about known
+        # vulnerabilities in what the package pulls in. Run through `uv run` so
+        # the audit sees this project's environment -- `uvx pip-audit` installs
+        # into an isolated one and cheerfully audits its own dependencies.
+        run: uv run --with pip-audit pip-audit --strict --progress-spinner=off
 
       - name: README figures are current
         # These are byte-deterministic by construction, so unlike the bundle they

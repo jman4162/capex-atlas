@@ -343,3 +343,30 @@ class TestCorruptInputsCannotBePublished:
             source=SourceReference(kind=SourceKind.SEC_FILING, url="https://x"),
         )
         assert audit_bundle(clean).passed
+
+
+def test_an_unavailable_period_says_which_ones_exist(offline_sec: None, tmp_path: Path):
+    """It surfaced as `UnitMismatchError: fcf.reported: unit=INHERIT needs at
+    least one analytical input` -- true, and three layers from the mistake."""
+    result = runner.invoke(
+        app, ["analyze", "GOOGL", "--through", "1999Q9", "--data-dir", str(tmp_path / "data")]
+    )
+    assert result.exit_code != 0
+    message = f"{result.output}{result.exception}"
+    assert "not among the periods this filer reports" in message
+    assert "2025FY" in message
+    assert "UnitMismatchError" not in message
+
+
+def test_restatements_keep_enough_detail_to_review(offline_sec: None, tmp_path: Path):
+    """A count told a reader that something was restated and nothing else."""
+    bundle = build_analysis(
+        json.loads(FIXTURE.read_text()),
+        entity_id="GOOGL",
+        period_label="2025FY",
+        source=SourceReference(kind=SourceKind.SEC_FILING, url="https://x"),
+    )
+    restatements = bundle.notes["restatements"]
+    assert isinstance(restatements, list) and restatements
+    first = restatements[0]
+    assert set(first) >= {"concept", "period", "superseded", "current", "current_accession"}

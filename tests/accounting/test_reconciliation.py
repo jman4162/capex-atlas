@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from capex_atlas.accounting.reconciliation import (
     CheckStatus,
+    ReconciliationReport,
     check_balance_sheet,
     check_year_to_date_consistency,
     reconcile,
@@ -107,11 +108,22 @@ class TestYearToDateConsistency:
         assert len(results) == 3
         assert all(r.status is CheckStatus.PASSED for r in results)
 
-    def test_shrinking_series_fails(self):
+    def test_a_shrinking_series_is_reported_as_suspect(self):
         facts = [cumulative("capex", "250", 2), cumulative("capex", "180", 3)]
         [result] = check_year_to_date_consistency(facts, "capex")
-        assert result.status is CheckStatus.FAILED
+        assert result.status is CheckStatus.SUSPECT
         assert "cumulative fell" in result.detail
+
+    def test_a_shrinking_series_does_not_fail_the_report(self):
+        """Year-to-date operating cash flow falls whenever a quarter is
+        cash-negative, which is a bad quarter rather than a bad extraction. The
+        check cannot tell them apart, and failed reconciliation now blocks
+        publication, so treating this as an identity would refuse to publish a
+        company having a bad three months."""
+        facts = [cumulative("capex", "250", 2), cumulative("capex", "180", 3)]
+        report = ReconciliationReport(results=tuple(check_year_to_date_consistency(facts, "capex")))
+        assert report.passed
+        assert not report.failures
 
     def test_negative_outflow_convention_is_handled(self):
         # Some filers report purchases as negative. Magnitude is what grows.

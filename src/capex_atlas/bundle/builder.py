@@ -123,6 +123,31 @@ def _assumptions_used(
     return tuple(resolved[key] for key in sorted(resolved))
 
 
+class PeriodNotReportedError(ValueError):
+    """The requested period is not among the ones the filer has reported."""
+
+
+def _require_period(facts: Sequence[FinancialFact], period_label: str) -> None:
+    """Fail on an unavailable period before the metrics do it obscurely.
+
+    Asking for a period the filer never reported used to surface as
+    ``UnitMismatchError: fcf.reported: unit=INHERIT needs at least one analytical
+    input`` -- true, and three layers away from the mistake. Nothing had checked
+    that the period existed, so every metric found no inputs and the first one to
+    notice raised about its own units.
+    """
+    if any(fact.period.label == period_label for fact in facts):
+        return
+    durations = sorted(
+        {fact.period.label for fact in facts if fact.period.kind is not PeriodKind.INSTANT},
+        reverse=True,
+    )
+    available = ", ".join(durations[:12]) or "none"
+    raise PeriodNotReportedError(
+        f"{period_label} is not among the periods this filer reports. Available: {available}"
+    )
+
+
 def build_analysis(
     payload: dict[str, Any],
     *,
@@ -162,6 +187,7 @@ def build_analysis(
         found = series.get(canonical, {}).get(label)
         return AnalyticalValue.from_fact(found) if found else None
 
+    _require_period(extraction.facts, period_label)
     tax_rate = registry.get(TAX_ASSUMPTION)
 
     with calculation_graph() as graph:
@@ -208,7 +234,21 @@ def build_analysis(
         notes={
             "facts_scope": facts_scope.value,
             "facts_extracted": len(extraction.facts),
-            "restatements": len(extraction.restatements),
+            # The count alone lost which concept was restated, by how much, and
+            # between which accessions -- the only things that let a reader judge
+            # whether it mattered. The module that finds them says as much:
+            # "Keeping the latest filing is right; keeping it quietly is not."
+            "restatements": [
+                {
+                    "concept": item.concept,
+                    "period": item.period_label,
+                    "superseded": str(item.superseded_value),
+                    "current": str(item.current_value),
+                    "superseded_accession": item.superseded_accession,
+                    "current_accession": item.current_accession,
+                }
+                for item in extraction.restatements
+            ],
             "skipped_entries": len(extraction.skipped),
             "segment_support": adapter.segment_support("sec_companyfacts").explanation,
         },

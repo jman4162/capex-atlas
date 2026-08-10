@@ -29,6 +29,14 @@ class CheckStatus(StrEnum):
     SKIPPED = "skipped"
     """Inputs were absent. Not a pass: nothing was verified."""
 
+    SUSPECT = "suspect"
+    """The data looks odd but is not necessarily wrong.
+
+    For heuristics that cannot separate a real business event from the extraction
+    fault they are hunting. Reported rather than raised, and it does not fail the
+    report, because refusing to publish a company's accounts over something the
+    company may legitimately have done is the wrong trade."""
+
 
 class CheckResult(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -121,12 +129,19 @@ def check_year_to_date_consistency(
     *,
     tolerance: Decimal = Decimal("1"),
 ) -> list[CheckResult]:
-    """Cumulative figures increase monotonically in magnitude within a year.
+    """Cumulative figures usually increase in magnitude within a year.
 
-    A nine-month total smaller than the six-month total means the two came from
-    different bases, which is usually a sign that periods were misassigned.
-    Sign is taken into account because outflow concepts are reported negative by
-    some filers and positive by others.
+    A nine-month total smaller than the six-month total often means the two came
+    from different bases, which is a sign that periods were misassigned. Sign is
+    taken into account because outflow concepts are reported negative by some
+    filers and positive by others.
+
+    Usually, not always, and the difference matters. Operating cash flow falls
+    year-to-date whenever a quarter is cash-negative, which is an ordinary event
+    for a business having a bad three months. The check cannot tell that apart
+    from the extraction fault it is looking for, so a decrease is reported as
+    suspect rather than failed. Treating it as an identity would refuse to
+    publish a loss-making quarter.
     """
     cumulative = [f for f in facts if f.metric_id == concept and _cumulative_index(f) is not None]
     results: list[CheckResult] = []
@@ -162,7 +177,7 @@ def check_year_to_date_consistency(
             results.append(
                 CheckResult(
                     check="ytd_monotonic",
-                    status=CheckStatus.PASSED if grew else CheckStatus.FAILED,
+                    status=CheckStatus.PASSED if grew else CheckStatus.SUSPECT,
                     period_label=later.period.label,
                     difference=abs(later.value) - abs(earlier.value),
                     detail=(

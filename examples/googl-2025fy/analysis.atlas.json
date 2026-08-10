@@ -6198,14 +6198,23 @@
   "notes": {
     "facts_extracted": 302,
     "facts_scope": "annual",
-    "restatements": 1,
+    "restatements": [
+      {
+        "concept": "FinanceLeaseLiability",
+        "current": "1666000000",
+        "current_accession": "0001652044-25-000014",
+        "period": "2023@4",
+        "superseded": "1746000000",
+        "superseded_accession": "0001652044-24-000118"
+      }
+    ],
     "segment_support": "Company Facts flattens away XBRL dimensions, so segment revenue and operating income are absent from it. Alphabet does report them; reaching them needs the filing's XBRL instance (the [xbrl] extra) rather than this endpoint.",
     "skipped_entries": 0
   },
   "period_label": "2025FY",
   "provenance": {
     "command": "python scripts/build_example.py",
-    "created_at": "2026-08-10T06:21:21.885797Z",
+    "created_at": "2026-08-10T06:42:46.211110Z",
     "package_version": "0.2.0",
     "schema_version": "1"
   },

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Built: schemas, the provenance kernel, the assumption registry, SEC ingestion, fiscal calendars,
 Company Facts extraction, the Alphabet adapter, reconciliation identities, the metric suite, the
-capital-vintage engine, the analysis bundle, chart rendering and the CLI. Only `obs` is still a stub.
+capital-vintage engine, the analysis bundle, chart rendering, tracing and the CLI. Nothing is a stub.
 
 Tests run offline against a hash-pinned Alphabet Company Facts fixture in `tests/fixtures`. Values
 asserted there check the pipeline; they are not published analysis, and `DISCLAIMER.md` applies to
@@ -61,7 +61,7 @@ backlog/RPO conversion, and AI-capex attribution.
 
 ## Layer architecture
 
-One `capex_atlas` package with optional extras (`[xbrl]`, `[app]`, `[otel]`, and `[agents]` /
+One `capex_atlas` package with optional extras (`[app]`, `[otel]`, and `[agents]` /
 `[strands]` later), not the four-distribution monorepo the design doc sketches. The layer boundaries
 that would have come from separate wheels are enforced instead by `import-linter` contracts in
 `pyproject.toml`:
@@ -139,15 +139,15 @@ basis, so an uncited prior can only enter as `user_input` and visibly marks resu
 
 Built, in `schemas/`: `EvidenceStatus`, `FiscalPeriod` (typed, label round-trips via `parse`),
 `SourceReference` (auto-derived id; `is_verifiable` means it names a passage), `FinancialFact`,
-`AnalyticalValue`, `CalculationNode`, `ManagementClaim`, `ChartSpec`, `AtlasEvent`. All frozen.
+`AnalyticalValue`, `CalculationNode`, `ManagementClaim`, `ChartSpec`. All frozen.
 
 Two id rules that look similar and are not: `FinancialFact.fact_id` is identity-only (entity,
 concept, period, unit, dimensions) so the reconciliation layer can spot a restatement of the same
 fact, while `AnalyticalValue.from_fact` folds the amount and source into its `value_id` so two
 contradictory figures are distinct calculation inputs.
 
-Not yet built: `CompanyAdapter` Protocol (M2), `AnalysisBundle` (M5, deferred until scenarios and
-validation results are real rather than half-specified).
+`CompanyAdapter` and `AnalysisBundle` are built. `AtlasEvent` was deleted in 0.2.0 and returns with
+the event log that needs it.
 
 ## The capital-vintage model
 
@@ -213,8 +213,9 @@ validated data (safe), run agent research (explicit, nondeterministic), approve 
 
 ## Build order
 
-M0 through M7 are complete and v0.1.0 is tagged. Next: **v0.2 claim ledger**, then v0.3 Microsoft
-and Meta, v0.4 agents, Oracle later.
+M0 through M7 are complete. v0.2.0 is released on PyPI, covering Alphabet, Microsoft and Meta.
+Next: **XBRL instance documents**, which close the segment gap with evidence, then the claim ledger,
+then agents. Oracle later.
 
 Known limits, all recorded in CHANGELOG.md rather than only here: segment figures need the XBRL
 instance rather than Company Facts (the adapter says so instead of returning an empty list);

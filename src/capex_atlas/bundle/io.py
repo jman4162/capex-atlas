@@ -18,7 +18,7 @@ from typing import Any
 
 import polars as pl
 
-from capex_atlas.bundle.model import AnalysisBundle
+from capex_atlas.bundle.model import SCHEMA_VERSION, AnalysisBundle
 from capex_atlas.disclaimer import FULL
 
 BUNDLE_FILE = "analysis.atlas.json"
@@ -75,10 +75,27 @@ def write_bundle(bundle: AnalysisBundle, directory: Path) -> Path:
     return target
 
 
+class IncompatibleBundleError(ValueError):
+    """The file was written by a version of the schema this code cannot read."""
+
+
 def read_bundle(path: Path) -> AnalysisBundle:
-    """Read a bundle from its JSON file or from the directory containing it."""
+    """Read a bundle from its JSON file or from the directory containing it.
+
+    The schema version was written into every bundle and then read by nothing, so
+    a file from a future major version would be parsed on a best-effort basis and
+    quietly missing whatever this code does not know about. Checking it costs one
+    comparison and turns a silent misreading into a refusal.
+    """
     target = path / BUNDLE_FILE if path.is_dir() else path
-    return AnalysisBundle.model_validate_json(target.read_text(encoding="utf-8"))
+    text = target.read_text(encoding="utf-8")
+    found = json.loads(text).get("schema_version", SCHEMA_VERSION)
+    if str(found).split(".")[0] != SCHEMA_VERSION.split(".")[0]:
+        raise IncompatibleBundleError(
+            f"{target} declares bundle schema {found}; this build reads "
+            f"{SCHEMA_VERSION}. Read it with the version that wrote it."
+        )
+    return AnalysisBundle.model_validate_json(text)
 
 
 def _write_table(path: Path, rows: list[dict[str, Any]]) -> None:

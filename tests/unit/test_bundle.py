@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -19,6 +20,7 @@ from capex_atlas.bundle import (
     read_bundle,
     write_bundle,
 )
+from capex_atlas.bundle.io import BUNDLE_FILE, IncompatibleBundleError
 from capex_atlas.schemas.calculation import CalculationNode
 from capex_atlas.schemas.evidence import EvidenceStatus
 from capex_atlas.schemas.facts import FinancialFact, Statement
@@ -348,3 +350,21 @@ class TestAuditDetectsTampering:
         # A caller may know the figure rests on something the kernel did not see.
         # A vintage summary is a scenario though its arithmetic is only derived.
         assert self.tampered(status=EvidenceStatus.ESTIMATED)
+
+
+class TestBundlesRefuseToBeMisread:
+    def test_a_future_schema_version_is_refused(self):
+        """SCHEMA_VERSION was written into every bundle and read by nothing, so a
+        file from a later schema would be parsed best-effort and silently missing
+        whatever this build does not know about."""
+        payload = json.loads(canonical_json(bundle()))
+        payload["schema_version"] = "2"
+        target = Path(tempfile.mkdtemp()) / BUNDLE_FILE
+        target.write_text(json.dumps(payload))
+        with pytest.raises(IncompatibleBundleError, match="schema 2"):
+            read_bundle(target)
+
+    def test_the_current_schema_version_reads(self):
+        target = Path(tempfile.mkdtemp())
+        write_bundle(bundle(), target)
+        assert read_bundle(target).entity_id == "GOOGL"
