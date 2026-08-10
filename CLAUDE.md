@@ -219,8 +219,8 @@ and Meta, v0.4 agents, Oracle later.
 Known limits, all recorded in CHANGELOG.md rather than only here: segment figures need the XBRL
 instance rather than Company Facts (the adapter says so instead of returning an empty list);
 `roic_rd_capitalized` takes a pre-computed research asset and amortization that the vintage engine
-could supply but does not; only Alphabet has an adapter; and the package is not on PyPI, which is a
-decision to make rather than an oversight.
+could supply but does not; Oracle has no adapter yet (Alphabet, Microsoft and Meta do); and the
+package is not on PyPI, which is a decision to make rather than an oversight.
 
 ## The example bundle
 
